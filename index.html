@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0a0a12" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Block Puzzle — 方塊消除挑戰</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <style>
+    :root { --cell: 44px; --gap: 3px; }
+
+    *, *::before, *::after {
+      box-sizing: border-box; margin: 0; padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none; -webkit-user-select: none;
+    }
+    html, body {
+      height: 100%; background: #0a0a12; color: #fff;
+      font-family: 'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif;
+      overscroll-behavior: none;
+    }
+    #game-root {
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 20px 12px 48px;
+    }
+
+    /* ── Header ── */
+    .title {
+      font-family: 'Orbitron', monospace;
+      font-size: clamp(20px,5vw,28px); font-weight: 900;
+      letter-spacing: 4px; text-transform: uppercase; margin-bottom: 4px;
+      background: linear-gradient(90deg,#00d4ff,#7c3aed,#ff6b35);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .subtitle { font-size: 11px; color: #555; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 14px; }
+
+    /* ── Stats ── */
+    .stats-row { display: flex; gap: 10px; margin-bottom: 14px; width: 100%; max-width: 420px; }
+    .stat-card { flex: 1; background: #12121e; border: 1px solid #1e1e30; border-radius: 10px; padding: 10px 8px; text-align: center; }
+    .stat-label { font-size: 9px; color: #444; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
+    .stat-value { font-family: 'Orbitron', monospace; font-size: clamp(16px,4vw,22px); font-weight: 700; color: #fff; }
+    .stat-value.best  { color: #f59e0b; }
+    .stat-value.level { color: #00d4ff; }
+
+    /* ── Level bar ── */
+    .level-label { font-size: 10px; color: #444; letter-spacing: 1px; margin-bottom: 5px; max-width: 420px; width: 100%; text-align: left; }
+    .progress-bar-wrap { width: 100%; max-width: 420px; background: #12121e; border-radius: 6px; height: 6px; margin-bottom: 8px; overflow: hidden; }
+    .progress-bar { height: 100%; border-radius: 6px; background: linear-gradient(90deg,#7c3aed,#00d4ff); transition: width 0.4s ease; width: 0%; }
+
+    /* ── Obstacle counter ── */
+    .obstacle-row {
+      display: flex; align-items: center; gap: 8px;
+      width: 100%; max-width: 420px; margin-bottom: 8px;
+      min-height: 22px;
+    }
+    .obs-label { font-size: 10px; color: #555; letter-spacing: 1px; white-space: nowrap; }
+    .obs-pips  { display: flex; gap: 4px; flex-wrap: wrap; }
+    .obs-pip {
+      width: 14px; height: 14px; border-radius: 3px;
+      background: #ff4d00;
+      box-shadow: 0 0 6px rgba(255,77,0,0.6);
+      position: relative; overflow: hidden;
+    }
+    /* ⭐ icon inside pip */
+    .obs-pip::after {
+      content: '★'; font-size: 9px; line-height: 14px;
+      display: block; text-align: center; color: #fff; opacity: 0.9;
+    }
+
+    /* ── Hint bar ── */
+    .hint-bar {
+      width: 100%; max-width: 420px; text-align: center;
+      font-size: 11px; letter-spacing: 1px; margin-bottom: 8px;
+      height: 18px; color: #333; transition: color 0.3s;
+    }
+    .hint-bar.active { color: #00d4ff; }
+
+    /* ── Board ── */
+    .board-wrap {
+      background: #0d0d1a; border: 1px solid #1a1a2e;
+      border-radius: 14px; padding: 12px; margin-bottom: 16px;
+    }
+    #board { display: grid; grid-template-columns: repeat(9, var(--cell)); gap: var(--gap); }
+
+    .cell {
+      width: var(--cell); height: var(--cell);
+      background: #111120; border-radius: 5px; border: 1px solid #1a1a2e;
+      transition: background 0.08s; cursor: default;
+      position: relative; overflow: hidden;
+    }
+    .cell.has-piece  { border-color: transparent; }
+    .cell.can-select { cursor: pointer; }
+    .cell.preview    { opacity: 0.6; }
+    .cell.invalid-preview { background: rgba(255,60,60,0.28) !important; border-color: rgba(255,60,60,0.4) !important; }
+    .cell.clearing   { animation: clearPop 0.38s ease forwards; }
+
+    /* Obstacle cell styling */
+    .cell.obstacle {
+      border-color: transparent;
+      background: #1a0a00 !important;
+    }
+    .cell.obstacle::before {
+      content: '';
+      position: absolute; inset: 3px;
+      border-radius: 3px;
+      background: #ff4d00;
+      box-shadow: 0 0 8px rgba(255,77,0,0.7), inset 0 0 4px rgba(255,200,0,0.3);
+    }
+    .cell.obstacle::after {
+      content: '★';
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: clamp(12px, calc(var(--cell)*0.38), 18px);
+      line-height: 1;
+      color: #fff;
+      text-shadow: 0 0 4px rgba(255,200,0,0.8);
+      z-index: 1;
+    }
+    /* pulse glow on obstacle */
+    .cell.obstacle::before { animation: obsPulse 2s ease-in-out infinite; }
+    @keyframes obsPulse {
+      0%,100% { box-shadow: 0 0 6px rgba(255,77,0,0.5); }
+      50%      { box-shadow: 0 0 14px rgba(255,140,0,0.9), inset 0 0 6px rgba(255,220,0,0.4); }
+    }
+
+    /* obstacle being cleared — special flash */
+    .cell.obs-clearing {
+      animation: obsFlash 0.45s ease forwards;
+    }
+    @keyframes obsFlash {
+      0%   { transform: scale(1);    opacity: 1; filter: brightness(1); }
+      30%  { transform: scale(1.4);  opacity: 1; filter: brightness(3); }
+      100% { transform: scale(0);    opacity: 0; }
+    }
+
+    @keyframes clearPop {
+      0%   { transform:scale(1);    opacity:1; }
+      40%  { transform:scale(1.25); opacity:0.9; }
+      100% { transform:scale(0);    opacity:0; }
+    }
+
+    /* ── Pieces area ── */
+    .pieces-area { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; max-width: 420px; width: 100%; margin-bottom: 12px; min-height: 110px; }
+    .piece-slot {
+      width: 118px; min-height: 100px;
+      background: #12121e; border: 1px solid #1e1e30;
+      border-radius: 12px; padding: 10px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      touch-action: none;
+      transition: border-color 0.2s, transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+    }
+    .piece-slot:hover { border-color: #444; }
+    .piece-slot.selected { border-color: #00d4ff; box-shadow: 0 0 0 2px rgba(0,212,255,0.25); transform: scale(1.05); }
+    .piece-slot.empty   { cursor: default; border-style: dashed; border-color: #1a1a28; pointer-events: none; }
+    .piece-grid { display: inline-grid; gap: 2px; }
+    .pc { border-radius: 3px; }
+
+    /* ── Ghost ── */
+    #ghost { position: fixed; pointer-events: none; z-index: 1000; display: none; transform: translate(-50%,-50%); opacity: 0.78; }
+    @media (pointer:coarse) {
+      #ghost { opacity: 0; } /* opacity controlled by JS on touch */
+      .cell { touch-action: none; }
+      .board-wrap { touch-action: none; }
+    }
+
+    /* ── Buttons ── */
+    .btn-row { display: flex; gap: 10px; }
+    .btn {
+      font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 2px;
+      padding: 10px 22px; border-radius: 8px; cursor: pointer;
+      border: 1px solid #333; background: #12121e; color: #888;
+      transition: all 0.2s; text-transform: uppercase;
+    }
+    .btn:hover  { border-color: #00d4ff; color: #00d4ff; }
+    .btn:active { transform: scale(0.96); }
+    .btn.primary { background: #7c3aed; border-color: #7c3aed; color: #fff; }
+    .btn.primary:hover { background: #6d28d9; border-color: #6d28d9; }
+
+    /* ── Score pop ── */
+    .score-pop {
+      position: fixed; pointer-events: none; z-index: 999;
+      font-family: 'Orbitron', monospace; font-weight: 700; font-size: 22px;
+      white-space: nowrap; animation: floatUp 0.95s ease forwards;
+    }
+    .score-pop.normal { color: #f59e0b; }
+    .score-pop.bonus  { color: #ff6b00; font-size: 26px; text-shadow: 0 0 12px rgba(255,140,0,0.8); }
+    @keyframes floatUp {
+      0%   { opacity:1; transform:translateY(0)    scale(1); }
+      100% { opacity:0; transform:translateY(-80px) scale(1.35); }
+    }
+
+    /* ── Level-up flash ── */
+    #levelup-flash {
+      position: fixed; inset: 0; z-index: 300; pointer-events: none;
+      background: rgba(124,58,237,0.18);
+      opacity: 0; display: none;
+    }
+    #levelup-flash.show { display: block; animation: lvlFlash 0.7s ease forwards; }
+    @keyframes lvlFlash {
+      0%   { opacity: 0; }
+      20%  { opacity: 1; }
+      100% { opacity: 0; }
+    }
+
+    /* ── Game Over overlay ── */
+    #game-over-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.88);
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 18px;
+      backdrop-filter: blur(4px);
+    }
+    #game-over-overlay.show { display: flex; }
+    .over-title  { font-family:'Orbitron',monospace; font-size:clamp(28px,7vw,38px); font-weight:900; color:#fff; letter-spacing:4px; }
+    .over-sub    { font-size:13px; color:#555; letter-spacing:1px; }
+    .over-score  { font-family:'Orbitron',monospace; font-size:clamp(40px,10vw,56px); font-weight:900; color:#f59e0b; }
+    .over-record { font-family:'Orbitron',monospace; font-size:13px; color:#7c3aed; letter-spacing:2px; }
+    .over-best   { font-size:13px; color:#444; font-family:'Orbitron',monospace; }
+
+    @media (max-width: 430px) { :root{--cell:36px;} .piece-slot{width:100px;} }
+    @media (max-width: 360px) { :root{--cell:32px;} .pieces-area{gap:8px;} .piece-slot{width:90px;} }
+  </style>
+</head>
+<body>
+<div id="game-root">
+  <div class="title">Block Puzzle</div>
+  <div class="subtitle">方塊消除挑戰</div>
+
+  <div class="stats-row">
+    <div class="stat-card"><div class="stat-label">分數</div><div class="stat-value" id="score-disp">0</div></div>
+    <div class="stat-card"><div class="stat-label">最高分</div><div class="stat-value best" id="best-disp">0</div></div>
+    <div class="stat-card"><div class="stat-label">等級</div><div class="stat-value level" id="level-disp">1</div></div>
+  </div>
+
+  <div class="level-label" id="level-label">等級 1 — 再得 100 分升級</div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar"></div></div>
+
+  <!-- Obstacle count display -->
+  <div class="obstacle-row" id="obstacle-row">
+    <span class="obs-label" id="obs-label" style="display:none">障礙方塊</span>
+    <div class="obs-pips" id="obs-pips"></div>
+  </div>
+
+  <div class="hint-bar" id="hint-bar">點擊下方方塊來選取</div>
+
+  <div class="board-wrap"><div id="board"></div></div>
+  <div class="pieces-area" id="pieces-area"></div>
+  <div class="btn-row"><button class="btn primary" id="new-game-btn">新遊戲</button></div>
+</div>
+
+<div id="ghost"><div id="ghost-inner"></div></div>
+<div id="levelup-flash"></div>
+
+<div id="game-over-overlay">
+  <div class="over-title">GAME OVER</div>
+  <div class="over-sub">無法再放置任何方塊</div>
+  <div class="over-score" id="final-score">0</div>
+  <div class="over-record" id="final-record"></div>
+  <div class="over-best"   id="final-best-label"></div>
+  <button class="btn primary" id="retry-btn">再玩一次</button>
+</div>
+
+<script>
+'use strict';
+
+/* ══════════════════════════════════════
+   CONSTANTS
+══════════════════════════════════════ */
+const COLS = 9, ROWS = 9;
+const COLORS = ['#00d4ff','#ff6b35','#7c3aed','#10b981','#f59e0b','#ec4899','#3b82f6','#e11d48','#84cc16'];
+const COMBO_BONUS = [0,10,30,60,100,150,210,280,360];
+
+// Special sentinel value stored in grid cells to mark obstacles
+const OBS = '__OBS__';
+// Bonus score per obstacle cell cleared in a line
+const OBS_BONUS_PER_CELL = 25;
+// Max obstacles on board at any time
+const MAX_OBS = 10;
+// How many obstacles to spawn on level-up: min(level-1, MAX_OBS)
+// Level 2 → 1 obs, Level 3 → 2, … Level 11+ → 10
+const obsCount = lvl => Math.min(Math.max(lvl - 1, 0), MAX_OBS);
+
+const PIECE_DEFS = [
+  [[1,1,1,1,1]],[[1],[1],[1],[1],[1]],
+  [[1,1,1,1]],[[1],[1],[1],[1]],
+  [[1,1,1]],[[1],[1],[1]],
+  [[1,1],[1,1]],
+  [[1,1,1],[1,1,1]],[[1,1],[1,1],[1,1]],
+  [[1,1,1],[1,1,1],[1,1,1]],
+  [[1,1,1],[1,0,0],[1,0,0]],[[1,1,1],[0,0,1],[0,0,1]],
+  [[1,0,0],[1,0,0],[1,1,1]],[[0,0,1],[0,0,1],[1,1,1]],
+  [[1,1],[1,0],[1,0]],[[1,1],[0,1],[0,1]],
+  [[1,0],[1,0],[1,1]],[[0,1],[0,1],[1,1]],
+  [[0,1,1],[1,1,0]],[[1,1,0],[0,1,1]],
+  [[1,0],[1,1],[0,1]],[[0,1],[1,1],[1,0]],
+  [[1,1,1],[0,1,0]],[[0,1,0],[1,1,1]],
+  [[1,0],[1,1],[1,0]],[[0,1],[1,1],[0,1]],
+  [[1,1],[1,0]],[[1,1],[0,1]],[[1,0],[1,1]],[[0,1],[1,1]],[[1]],
+];
+
+/* ══════════════════════════════════════
+   STATE
+══════════════════════════════════════ */
+let grid, score, best, level, pieces;
+let selIdx = null;
+let previewPos = null;
+
+/* ══════════════════════════════════════
+   PERSISTENCE
+══════════════════════════════════════ */
+const SK_BEST = 'bpz_v4_best', SK_ST = 'bpz_v4_state';
+function saveProg(){
+  try {
+    localStorage.setItem(SK_BEST, best);
+    localStorage.setItem(SK_ST, JSON.stringify({grid,score,level,pieces}));
+  } catch(e){}
+}
+function loadBest(){ try{ best=parseInt(localStorage.getItem(SK_BEST))||0; }catch(e){best=0;} }
+function loadState(){
+  try{
+    const s=JSON.parse(localStorage.getItem(SK_ST));
+    if(!s||!s.grid||!s.pieces) return false;
+    ({grid,score,level,pieces}=s); return true;
+  }catch(e){ return false; }
+}
+function clearState(){ try{ localStorage.removeItem(SK_ST); }catch(e){} }
+
+/* ══════════════════════════════════════
+   HELPERS
+══════════════════════════════════════ */
+const randColor = () => COLORS[Math.floor(Math.random()*COLORS.length)];
+const randPiece = () => ({shape:PIECE_DEFS[Math.floor(Math.random()*PIECE_DEFS.length)], color:randColor()});
+const emptyGrid = () => Array.from({length:ROWS},()=>Array(COLS).fill(null));
+
+// Count obstacles currently on the grid
+function countObstacles(){
+  let n=0;
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(grid[r][c]===OBS) n++;
+  return n;
+}
+
+// Spawn exactly `n` obstacles into empty cells (random positions)
+function spawnObstacles(n){
+  const empty=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(!grid[r][c]) empty.push([r,c]);
+  // Shuffle
+  for(let i=empty.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [empty[i],empty[j]]=[empty[j],empty[i]]; }
+  const toPlace=Math.min(n, empty.length);
+  for(let i=0;i<toPlace;i++) grid[empty[i][0]][empty[i][1]]=OBS;
+}
+
+function canPlace(piece,sr,sc){
+  for(let r=0;r<piece.shape.length;r++)
+    for(let c=0;c<piece.shape[r].length;c++)
+      if(piece.shape[r][c]){
+        const gr=sr+r,gc=sc+c;
+        if(gr<0||gr>=ROWS||gc<0||gc>=COLS||grid[gr][gc]) return false;
+      }
+  return true;
+}
+function placePiece(piece,sr,sc){
+  for(let r=0;r<piece.shape.length;r++)
+    for(let c=0;c<piece.shape[r].length;c++)
+      if(piece.shape[r][c]) grid[sr+r][sc+c]=piece.color;
+}
+
+// A line is full if every cell is non-null (normal color OR obstacle)
+function findFullLines(){
+  const fr=[],fc=[];
+  for(let r=0;r<ROWS;r++) if(grid[r].every(c=>c!==null)) fr.push(r);
+  for(let c=0;c<COLS;c++) if(grid.every(row=>row[c]!==null)) fc.push(c);
+  return {fr,fc};
+}
+
+// Returns count of obstacle cells inside cleared lines
+function countObsInLines(fr,fc){
+  const hit=new Set();
+  fr.forEach(r=>{ for(let c=0;c<COLS;c++) if(grid[r][c]===OBS) hit.add(r*COLS+c); });
+  fc.forEach(c=>{ for(let r=0;r<ROWS;r++) if(grid[r][c]===OBS) hit.add(r*COLS+c); });
+  return hit.size;
+}
+
+function eraseLines(fr,fc){
+  fr.forEach(r=>{ for(let c=0;c<COLS;c++) grid[r][c]=null; });
+  fc.forEach(c=>{ for(let r=0;r<ROWS;r++) grid[r][c]=null; });
+}
+
+function isGameOver(){
+  return pieces.filter(Boolean).every(p=>{
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(canPlace(p,r,c)) return false;
+    return true;
+  });
+}
+
+/* ══════════════════════════════════════
+   DOM HELPERS
+══════════════════════════════════════ */
+function cellEl(r,c){ return document.querySelector(`#board .cell[data-r="${r}"][data-c="${c}"]`); }
+
+function makePieceGrid(piece,sz){
+  const pg=document.createElement('div');
+  pg.className='piece-grid';
+  pg.style.gridTemplateColumns=`repeat(${piece.shape[0].length},${sz}px)`;
+  piece.shape.forEach(row=>row.forEach(v=>{
+    const pc=document.createElement('div');
+    pc.className='pc';
+    pc.style.cssText=`width:${sz}px;height:${sz}px;background:${v?piece.color:'transparent'}`;
+    pg.appendChild(pc);
+  }));
+  return pg;
+}
+
+/* ══════════════════════════════════════
+   RENDER
+══════════════════════════════════════ */
+function renderBoard(){
+  const board=document.getElementById('board');
+  board.innerHTML='';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const el=document.createElement('div');
+    const val=grid[r][c];
+    let cls='cell';
+    if(val===OBS){
+      cls+=' has-piece obstacle';
+    } else if(val){
+      cls+=' has-piece';
+    }
+    if(selIdx!==null) cls+=' can-select';
+    el.className=cls;
+    if(val && val!==OBS) el.style.background=val;
+    el.dataset.r=r; el.dataset.c=c;
+    board.appendChild(el);
+  }
+  board.addEventListener('mouseover', onBoardMouseOver);
+  board.addEventListener('mouseout',  onBoardMouseOut);
+  board.addEventListener('click',     onBoardClick);
+}
+
+function clearPreview(){
+  document.querySelectorAll('#board .cell.preview, #board .cell.invalid-preview').forEach(el=>{
+    el.classList.remove('preview','invalid-preview');
+    const r=+el.dataset.r,c=+el.dataset.c;
+    const val=grid[r][c];
+    if(val===OBS){ /* obstacle cells manage their own bg via CSS */ }
+    else if(val){ el.style.background=val; }
+    else { el.style.background=''; }
+  });
+  previewPos=null;
+}
+
+function showPreview(piece,sr,sc){
+  clearPreview();
+  previewPos={r:sr,c:sc};
+  const valid=canPlace(piece,sr,sc);
+  for(let r=0;r<piece.shape.length;r++)
+    for(let c=0;c<piece.shape[r].length;c++)
+      if(piece.shape[r][c]){
+        const gr=sr+r,gc=sc+c;
+        if(gr<0||gr>=ROWS||gc<0||gc>=COLS) continue;
+        const el=cellEl(gr,gc);
+        if(!el) continue;
+        if(valid){ el.classList.add('preview'); el.style.background=piece.color; }
+        else     { el.classList.add('invalid-preview'); }
+      }
+}
+
+function renderPieces(){
+  const area=document.getElementById('pieces-area');
+  area.innerHTML='';
+  pieces.forEach((p,i)=>{
+    const slot=document.createElement('div');
+    slot.dataset.idx=i;
+    if(!p){
+      slot.className='piece-slot empty';
+    } else {
+      slot.className='piece-slot'+(selIdx===i?' selected':'');
+      slot.appendChild(makePieceGrid(p,18));
+      slot.addEventListener('click', e=>{ e.stopPropagation(); onPieceClick(i); });
+      slot.addEventListener('touchstart', e=>{ e.stopPropagation(); onPieceTouchStart(e,i); },{passive:false});
+    }
+    area.appendChild(slot);
+  });
+}
+
+function updateGhost(piece){
+  const g=document.getElementById('ghost');
+  const gi=document.getElementById('ghost-inner');
+  gi.innerHTML='';
+  if(!piece){ g.style.display='none'; return; }
+  gi.appendChild(makePieceGrid(piece,26));
+  g.style.display='block';
+}
+function hideGhost(){ document.getElementById('ghost').style.display='none'; }
+
+function updateStats(){
+  if(score>best) best=score;
+  document.getElementById('score-disp').textContent=score;
+  document.getElementById('best-disp').textContent=best;
+  document.getElementById('level-disp').textContent=level;
+  const next=level*100, prev=(level-1)*100;
+  const pct=Math.min(100,Math.max(0,((score-prev)/(next-prev))*100));
+  document.getElementById('prog-bar').style.width=pct+'%';
+  const needed=Math.max(0,next-score);
+  document.getElementById('level-label').textContent=
+    needed>0 ? `等級 ${level} — 再得 ${needed} 分升級` : `等級 ${level}！`;
+}
+
+// Render the obstacle pip indicators
+function renderObsPips(){
+  const n = countObstacles();
+  const label = document.getElementById('obs-label');
+  const pips  = document.getElementById('obs-pips');
+  pips.innerHTML='';
+  if(level < 2 || n === 0){ label.style.display='none'; return; }
+  label.style.display='inline';
+  for(let i=0;i<n;i++){
+    const pip=document.createElement('div');
+    pip.className='obs-pip';
+    pips.appendChild(pip);
+  }
+}
+
+function setHint(msg,active){
+  const h=document.getElementById('hint-bar');
+  h.textContent=msg;
+  h.className='hint-bar'+(active?' active':'');
+}
+
+function showScorePop(pts, x, y, isBonus){
+  const el=document.createElement('div');
+  el.className='score-pop '+(isBonus?'bonus':'normal');
+  el.textContent='+'+pts;
+  el.style.left=x+'px'; el.style.top=y+'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend',()=>el.remove());
+}
+
+function triggerLevelUpFlash(){
+  const el=document.getElementById('levelup-flash');
+  el.classList.remove('show');
+  void el.offsetWidth; // reflow
+  el.classList.add('show');
+}
+
+/* ══════════════════════════════════════
+   INTERACTION
+   桌面：點擊選取 → 滑鼠移動預覽 → 點擊放置
+   移動端：長按/拖動方塊 → 手指移動即時預覽 → 放開放置
+          (手指偏移補正：ghost 顯示在手指上方，避免遮擋)
+══════════════════════════════════════ */
+
+// ── 共用：取消選取 ──
+function deselect(){
+  selIdx=null; clearPreview(); hideGhost(); renderPieces();
+  document.querySelectorAll('#board .cell').forEach(el=>el.classList.remove('can-select'));
+  setHint(isTouchDevice()?'長按方塊開始拖動':'點擊下方方塊來選取', false);
+}
+
+const isTouchDevice = () => window.matchMedia('(pointer:coarse)').matches;
+
+// ── 桌面：點擊選取 ──
+function onPieceClick(i){
+  if(isTouchDevice()) return; // 觸控裝置走 touch 路徑
+  if(selIdx===i){ deselect(); return; }
+  selIdx=i; clearPreview(); renderPieces(); updateGhost(pieces[i]);
+  document.querySelectorAll('#board .cell').forEach(el=>el.classList.add('can-select'));
+  setHint('移到格子上預覽，點擊格子放置　ESC 取消', true);
+}
+
+// ── 桌面：board hover & click ──
+function onBoardMouseOver(e){
+  if(selIdx===null||isTouchDevice()) return;
+  const el=e.target.closest?e.target.closest('.cell'):null;
+  if(!el) return;
+  showPreview(pieces[selIdx],+el.dataset.r,+el.dataset.c);
+}
+function onBoardMouseOut(e){
+  if(selIdx===null||isTouchDevice()) return;
+  const rel=e.relatedTarget;
+  if(rel&&rel.closest&&rel.closest('#board')) return;
+  clearPreview();
+}
+function onBoardClick(e){
+  if(selIdx===null||isTouchDevice()) return;
+  const el=e.target.closest?e.target.closest('.cell'):null;
+  if(!el) return;
+  const placed=doPlace(selIdx,+el.dataset.r,+el.dataset.c);
+  if(placed){
+    selIdx=null; hideGhost();
+    document.querySelectorAll('#board .cell').forEach(c=>c.classList.remove('can-select'));
+    setHint('點擊下方方塊來選取', false);
+  }
+}
+
+// Ghost 跟著滑鼠（桌面）
+document.addEventListener('mousemove', e=>{
+  if(selIdx===null||isTouchDevice()) return;
+  const g=document.getElementById('ghost');
+  g.style.left=e.clientX+'px'; g.style.top=e.clientY+'px';
+});
+
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') deselect(); });
+document.addEventListener('click', e=>{
+  if(selIdx===null||isTouchDevice()) return;
+  if(!e.target.closest('#board')&&!e.target.closest('.pieces-area')) deselect();
+});
+
+/* ══════════════════════════════════════
+   TOUCH DRAG（移動端）
+   設計原則：
+   1. touchstart on piece-slot → 立即啟動拖動（不需長按）
+   2. ghost 顯示在手指正上方（Y 偏移 = ghost高度 + 16px 間距）
+   3. 手指移動時用 elementFromPoint 偵測格子，即時顯示預覽
+   4. touchend → 放置；若落點無效或在棋盤外 → 取消
+   5. 全程 preventDefault 防止頁面滾動
+══════════════════════════════════════ */
+let touchDragIdx = null;          // 正在拖動的 piece index
+let touchEndIdx = null;           // touchend 時確認的 index（避免閉包問題）
+let touchDragActive = false;      // 是否已開始移動（區別 tap vs drag）
+let touchStartX = 0, touchStartY = 0;
+const DRAG_THRESHOLD = 6;         // px，超過才視為拖動
+
+// 計算 ghost 顯示位置（手指上方，讓格子可見）
+function ghostOffsetY(piece){
+  const rows = piece.shape.length;
+  const cellSz = 26; // ghost cell size
+  return -(rows * (cellSz + 2)) - 20; // ghost 高度 + 間距
+}
+
+function moveTouchGhost(piece, cx, cy){
+  const g = document.getElementById('ghost');
+  // X 置中，Y 在手指上方
+  g.style.left = cx + 'px';
+  g.style.top  = (cy + ghostOffsetY(piece)) + 'px';
+  g.style.transform = 'translate(-50%, 0)';
+  g.style.display = 'block';
+}
+
+// 從觸控座標取得 board cell（排除 ghost 遮擋）
+function cellFromTouch(cx, cy){
+  // 暫時隱藏 ghost 讓 elementFromPoint 穿透
+  const g = document.getElementById('ghost');
+  const prev = g.style.display;
+  g.style.display = 'none';
+  const el = document.elementFromPoint(cx, cy);
+  g.style.display = prev;
+  if(!el) return null;
+  return el.closest ? el.closest('.cell') : null;
+}
+
+// piece-slot 的 touchstart
+function onPieceTouchStart(e, i){
+  if(!pieces[i]) return;
+  e.preventDefault();
+  touchDragIdx = i;
+  touchEndIdx = i;
+  touchDragActive = false;
+  const t = e.touches[0];
+  touchStartX = t.clientX;
+  touchStartY = t.clientY;
+
+  // 立刻更新 ghost 但先不顯示（等移動一點才顯示，避免誤觸）
+  updateGhost(pieces[i]);
+  moveTouchGhost(pieces[i], t.clientX, t.clientY);
+  document.getElementById('ghost').style.opacity = '0'; // 先透明
+
+  // 標記 slot
+  const slot = document.querySelector(`.piece-slot[data-idx="${i}"]`);
+  if(slot) slot.classList.add('selected');
+}
+
+document.addEventListener('touchmove', e=>{
+  if(touchDragIdx === null) return;
+  e.preventDefault();
+
+  const t = e.touches[0];
+  const dx = t.clientX - touchStartX;
+  const dy = t.clientY - touchStartY;
+
+  if(!touchDragActive && Math.sqrt(dx*dx+dy*dy) > DRAG_THRESHOLD){
+    touchDragActive = true;
+    document.getElementById('ghost').style.opacity = '0.85';
+    // 把所有 cell 標記可放置（視覺提示）
+    document.querySelectorAll('#board .cell').forEach(el=>el.classList.add('can-select'));
+    setHint('放開手指以放置方塊', true);
+  }
+
+  if(!touchDragActive) return;
+
+  const piece = pieces[touchDragIdx];
+  moveTouchGhost(piece, t.clientX, t.clientY);
+
+  // 預覽落點（用手指真實位置，ghost 在上方，下方即目標格子）
+  const cell = cellFromTouch(t.clientX, t.clientY);
+  if(cell){
+    showPreview(piece, +cell.dataset.r, +cell.dataset.c);
+  } else {
+    clearPreview();
+  }
+}, {passive:false});
+
+document.addEventListener('touchend', e=>{
+  if(touchDragIdx === null) return;
+  e.preventDefault();
+
+  const t = e.changedTouches[0];
+  const piece = pieces[touchDragIdx];
+  const wasDrag = touchDragActive;
+
+  // 清理視覺狀態
+  hideGhost();
+  clearPreview();
+  document.getElementById('ghost').style.transform = 'translate(-50%,-50%)'; // 恢復預設
+  document.querySelectorAll('#board .cell').forEach(el=>el.classList.remove('can-select'));
+  document.querySelectorAll('.piece-slot.selected').forEach(el=>el.classList.remove('selected'));
+  touchDragIdx = null;
+  touchDragActive = false;
+
+  if(wasDrag){
+    // 拖動模式：在放開位置放置
+    const cell = cellFromTouch(t.clientX, t.clientY);
+    if(cell) doPlace(touchEndIdx, +cell.dataset.r, +cell.dataset.c);
+    selIdx = null;
+    setHint('長按方塊開始拖動', false);
+  } else {
+    // 輕點：切換選取（tap-to-select，再 tap cell 放置）
+    const slot = document.elementFromPoint(t.clientX, t.clientY);
+    if(slot){
+      const ps = slot.closest ? slot.closest('.piece-slot') : null;
+      if(ps && !ps.classList.contains('empty')){
+        const i = +ps.dataset.idx;
+        if(selIdx === i){
+          selIdx = null;
+          renderPieces();
+          setHint('長按方塊開始拖動', false);
+        } else {
+          selIdx = i;
+          renderPieces();
+          updateGhost(pieces[i]);
+          document.querySelectorAll('#board .cell').forEach(el=>el.classList.add('can-select'));
+          setHint('點擊格子放置　再次點擊方塊取消', true);
+        }
+        return;
+      }
+      // tap on board cell while piece selected
+      if(selIdx !== null){
+        const cell = slot.closest ? slot.closest('.cell') : null;
+        if(cell){
+          const placed = doPlace(selIdx, +cell.dataset.r, +cell.dataset.c);
+          if(placed){
+            selIdx = null; hideGhost();
+            document.querySelectorAll('#board .cell').forEach(c=>c.classList.remove('can-select'));
+            setHint('長按方塊開始拖動', false);
+          }
+        }
+      }
+    }
+  }
+},{passive:false});
+
+// ghost 的 touchmove 不需要重複，已在 document 層處理
+
+/* ══════════════════════════════════════
+   GAME LOGIC
+══════════════════════════════════════ */
+function doPlace(idx,sr,sc){
+  const piece=pieces[idx];
+  if(!piece||!canPlace(piece,sr,sc)) return false;
+
+  placePiece(piece,sr,sc);
+  pieces[idx]=null;
+  clearPreview();
+
+  const {fr,fc}=findFullLines();
+  const total=fr.length+fc.length;
+
+  // Count obstacle cells caught in cleared lines (before erasing)
+  const obsCleared = total>0 ? countObsInLines(fr,fc) : 0;
+
+  // Collect cells to animate
+  if(total>0){
+    const toAnim=new Set();
+    fr.forEach(r=>{ for(let c=0;c<COLS;c++) toAnim.add(r*COLS+c); });
+    fc.forEach(c=>{ for(let r=0;r<ROWS;r++) toAnim.add(r*COLS+c); });
+    const cells=document.querySelectorAll('#board .cell');
+    toAnim.forEach(idx2=>{
+      const el=cells[idx2]; if(!el) return;
+      // Obstacle cells get a special flashier animation
+      const r2=+el.dataset.r, c2=+el.dataset.c;
+      if(grid[r2][c2]===OBS) el.classList.add('obs-clearing');
+      else                   el.classList.add('clearing');
+    });
+    setTimeout(()=>{ eraseLines(fr,fc); renderBoard(); renderObsPips(); postPlace(idx,sr,sc,obsCleared); },400);
+  } else {
+    renderBoard();
+    postPlace(idx,sr,sc,obsCleared);
+  }
+
+  // ── Scoring ──
+  const cellCount = piece.shape.flat().filter(Boolean).length;
+  const lineBonus  = total>0 ? COMBO_BONUS[Math.min(total,COMBO_BONUS.length-1)]+total*18 : 0;
+  const obsBonus   = obsCleared * OBS_BONUS_PER_CELL;
+  const pts        = cellCount + lineBonus + obsBonus;
+  score += pts;
+
+  // ── Level-up check ──
+  const oldLevel = level;
+  const nl = Math.floor(score/100)+1;
+  if(nl > level){
+    level = nl;
+    triggerLevelUpFlash();
+    // Spawn new obstacles for the new level (fill up to target count)
+    const target = obsCount(level);
+    const current = countObstacles();
+    if(target > current) spawnObstacles(target - current);
+  }
+
+  updateStats(); saveProg(); renderObsPips();
+
+  // Score pop — show obstacle bonus separately if any
+  const br=document.getElementById('board').getBoundingClientRect();
+  const popX=br.left+br.width/2-24, popY=br.top+24;
+  if(obsBonus>0){
+    showScorePop(pts-obsBonus, popX, popY, false);
+    setTimeout(()=>showScorePop(obsBonus, popX-10, popY+30, true), 120);
+  } else {
+    showScorePop(pts, popX, popY, false);
+  }
+
+  return true;
+}
+
+function postPlace(idx, sr, sc, obsCleared){
+  if(pieces.every(p=>!p)) pieces=[randPiece(),randPiece(),randPiece()];
+  renderPieces();
+  if(isGameOver()) showGameOver();
+}
+
+function showGameOver(){
+  saveProg();
+  document.getElementById('final-score').textContent=score;
+  document.getElementById('final-record').textContent=(score>0&&score>=best)?'🎉 新紀錄！':'';
+  document.getElementById('final-best-label').textContent=`最高分: ${best}`;
+  document.getElementById('game-over-overlay').classList.add('show');
+}
+
+/* ══════════════════════════════════════
+   NEW GAME / INIT
+══════════════════════════════════════ */
+function newGame(){
+  loadBest(); clearState();
+  grid=emptyGrid(); score=0; level=1;
+  pieces=[randPiece(),randPiece(),randPiece()];
+  selIdx=null;
+  document.getElementById('game-over-overlay').classList.remove('show');
+  hideGhost(); renderBoard(); renderPieces(); updateStats(); renderObsPips();
+  setHint(isTouchDevice()?'長按方塊開始拖動，或點一下選取':'點擊下方方塊來選取',false);
+}
+
+function resumeOrNew(){
+  loadBest();
+  if(loadState()){
+    renderBoard(); renderPieces(); updateStats(); renderObsPips();
+    setHint(isTouchDevice()?'長按方塊開始拖動，或點一下選取':'點擊下方方塊來選取',false);
+  } else {
+    newGame();
+  }
+}
+
+document.getElementById('new-game-btn').addEventListener('click', newGame);
+document.getElementById('retry-btn').addEventListener('click', ()=>{
+  document.getElementById('game-over-overlay').classList.remove('show');
+  newGame();
+});
+
+if('serviceWorker' in navigator)
+  window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+
+resumeOrNew();
+</script>
+</body>
+</html>

@@ -1,0 +1,2 @@
+# No Python dependencies required for this static web project.
+# (This file exists to satisfy tooling that expects a requirements.txt.)
