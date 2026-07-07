@@ -24,3 +24,8 @@ build/
 
 # Service worker cache (if generated)
 service-worker-cache/
+
+# Local backups & tool config
+*.bak-*
+.claude/
+.vercel

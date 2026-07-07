@@ -2,55 +2,232 @@
 <html lang="zh-TW">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <script>
+    (function () {
+      var KEY = 'bpz_v4_theme';
+      var saved = null;
+      try { saved = localStorage.getItem(KEY); } catch (e) {}
+      var theme = (saved === 'light' || saved === 'dark')
+        ? saved
+        : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', theme);
+    })();
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <meta name="theme-color" content="#0a0a12" />
+  <meta name="theme-color" content="#17151F" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icon-192.png" />
   <title>Block Puzzle — 方塊消除挑戰</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet" />
   <style>
-    :root { --cell: 44px; --gap: 3px; }
+    :root {
+      --cell: 44px; --gap: 3px;
+
+      /* ── B.1 Base neutrals, text, borders (light) ── */
+      --bg: #F6F5FB;
+      --surface: #FFFFFF;
+      --surface-2: #ECEAF7;
+      --surface-3: #E1DEF0;
+      --text: #241F3D;
+      --text-muted: #6B6580;
+      --border: #E1DEF0;
+
+      /* ── B.2 Accent tokens (light) ── */
+      --accent: #6D42F5;
+      --on-accent: #FFFFFF;
+      --accent-2: #B45309;
+      --on-accent-2: #FFFFFF;
+
+      /* ── B.3 Board & cell colors (light) ── */
+      --board-bg: #ECEAF7;
+      --cell-bg: #FBFAFF;
+      --cell-bg-alt: #EFECFA;
+      --cell-border: #E1DEF0;
+      --cell-obstacle-bg: #FDEBE8;
+      --obstacle-fg: #E8482A;
+
+      /* ── B.4 Piece colors (light) ── */
+      --piece-1: #06B6D4;
+      --piece-2: #FB7C3C;
+      --piece-3: #7C5CFF;
+      --piece-4: #22B37A;
+      --piece-5: #F5A623;
+      --piece-6: #F0508C;
+      --piece-7: #4C82F0;
+      --piece-8: #EF4B63;
+      --piece-9: #97CC1E;
+
+      /* ── B.5 Feedback colors (light) ── */
+      --success: #16A34A;
+      --danger: #DC2626;
+
+      /* ── B.6 Shadows (light) ── */
+      --shadow-sm: 0 1px 2px rgba(36,31,61,0.06);
+      --shadow-md: 0 4px 12px rgba(36,31,61,0.10);
+      --shadow-lg: 0 12px 32px rgba(36,31,61,0.14);
+      --shadow-inset-soft: inset 2px 2px 5px rgba(36,31,61,0.08), inset -2px -2px 5px rgba(255,255,255,0.7);
+
+      /* ── Radius scale ── */
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --radius-full: 999px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #17151F;
+      --surface: #1F1C2B;
+      --surface-2: #272335;
+      --surface-3: #322D45;
+      --text: #F1EEFB;
+      --text-muted: #A9A3C2;
+      --border: #322D45;
+
+      --accent: #9B7BFF;
+      --on-accent: #17151F;
+      --accent-2: #FFB454;
+      --on-accent-2: #17151F;
+
+      --board-bg: #1B1828;
+      --cell-bg: #211D30;
+      --cell-bg-alt: #2A2540;
+      --cell-border: #322D45;
+      --cell-obstacle-bg: #3A1410;
+      --obstacle-fg: #FF6B4A;
+
+      --piece-1: #22D3F5;
+      --piece-2: #FF8F5C;
+      --piece-3: #9B7BFF;
+      --piece-4: #34D399;
+      --piece-5: #FBBF3D;
+      --piece-6: #FF6FA8;
+      --piece-7: #6C9BFF;
+      --piece-8: #FF6B7A;
+      --piece-9: #ADE04A;
+
+      --success: #34D399;
+      --danger: #FF5C5C;
+
+      --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
+      --shadow-md: 0 6px 20px rgba(0,0,0,0.55);
+      --shadow-lg: 0 16px 48px rgba(0,0,0,0.60);
+      --shadow-inset-soft: inset 2px 2px 5px rgba(0,0,0,0.45), inset -2px -2px 5px rgba(255,255,255,0.04);
+    }
+
+    /* Belt-and-suspenders no-JS fallback — the inline FOUC-safe script in <head>
+       normally sets [data-theme] before this stylesheet is even parsed, so this
+       block only matters if JS/localStorage is unavailable. */
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme]) {
+        --bg: #17151F; --surface: #1F1C2B; --surface-2: #272335; --surface-3: #322D45;
+        --text: #F1EEFB; --text-muted: #A9A3C2; --border: #322D45;
+        --accent: #9B7BFF; --on-accent: #17151F; --accent-2: #FFB454; --on-accent-2: #17151F;
+        --board-bg: #1B1828; --cell-bg: #211D30; --cell-bg-alt: #2A2540; --cell-border: #322D45;
+        --cell-obstacle-bg: #3A1410; --obstacle-fg: #FF6B4A;
+        --piece-1: #22D3F5; --piece-2: #FF8F5C; --piece-3: #9B7BFF; --piece-4: #34D399; --piece-5: #FBBF3D;
+        --piece-6: #FF6FA8; --piece-7: #6C9BFF; --piece-8: #FF6B7A; --piece-9: #ADE04A;
+        --success: #34D399; --danger: #FF5C5C;
+        --shadow-sm: 0 1px 2px rgba(0,0,0,0.40);
+        --shadow-md: 0 6px 20px rgba(0,0,0,0.55);
+        --shadow-lg: 0 16px 48px rgba(0,0,0,0.60);
+        --shadow-inset-soft: inset 2px 2px 5px rgba(0,0,0,0.45), inset -2px -2px 5px rgba(255,255,255,0.04);
+      }
+    }
 
     *, *::before, *::after {
       box-sizing: border-box; margin: 0; padding: 0;
       -webkit-tap-highlight-color: transparent;
       user-select: none; -webkit-user-select: none;
+      -webkit-touch-callout: none;
     }
     html, body {
-      height: 100%; background: #0a0a12; color: #fff;
+      height: 100%; background: var(--bg); color: var(--text);
       font-family: 'Noto Sans TC','PingFang TC','Microsoft JhengHei',sans-serif;
       overscroll-behavior: none;
+      transition: background-color 200ms ease, color 200ms ease;
     }
     #game-root {
+      position: relative;
       min-height: 100vh; display: flex; flex-direction: column;
-      align-items: center; padding: 20px 12px 48px;
+      align-items: center;
+      padding: max(20px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
     }
+
+    /* ── Theme toggle ── */
+    #theme-toggle-btn {
+      position: absolute; top: max(20px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right));
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-full);
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+      color: var(--text); cursor: pointer;
+      transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, transform 150ms ease;
+      z-index: 10;
+    }
+    #theme-toggle-btn:active { transform: scale(0.92); }
+    #theme-toggle-btn svg { width: 20px; height: 20px; }
+    #icon-sun { display: none; }
+    #icon-moon { display: block; }
+    [data-theme="dark"] #icon-sun { display: block; }
+    [data-theme="dark"] #icon-moon { display: none; }
+
+    /* ── Sound toggle（A-1）：與 theme-toggle-btn 同樣式，並排於其左側，避免重疊 ── */
+    #sound-toggle-btn {
+      position: absolute; top: max(20px, env(safe-area-inset-top)); right: calc(max(12px, env(safe-area-inset-right)) + 54px);
+      width: 44px; height: 44px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-full);
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+      color: var(--text); cursor: pointer;
+      transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, transform 150ms ease;
+      z-index: 10;
+    }
+    #sound-toggle-btn:active { transform: scale(0.92); }
+    #sound-toggle-btn svg { width: 20px; height: 20px; }
+    #icon-sound-off { display: none; }
+    #icon-sound-on { display: block; }
+    #sound-toggle-btn.muted #icon-sound-on { display: none; }
+    #sound-toggle-btn.muted #icon-sound-off { display: block; }
 
     /* ── Header ── */
     .title {
-      font-family: 'Orbitron', monospace;
-      font-size: clamp(20px,5vw,28px); font-weight: 900;
-      letter-spacing: 4px; text-transform: uppercase; margin-bottom: 4px;
-      background: linear-gradient(90deg,#00d4ff,#7c3aed,#ff6b35);
+      font-family: 'Baloo 2', 'Noto Sans TC', sans-serif;
+      font-size: clamp(24px,6vw,32px); font-weight: 800;
+      letter-spacing: 0.5px; margin-bottom: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
       -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
     }
-    .subtitle { font-size: 11px; color: #555; letter-spacing: 3px; text-transform: uppercase; margin-bottom: 14px; }
+    .subtitle { font-size: 12px; color: var(--text-muted); letter-spacing: 1.5px; margin-bottom: 14px; font-family: 'Noto Sans TC', sans-serif; }
 
     /* ── Stats ── */
     .stats-row { display: flex; gap: 10px; margin-bottom: 14px; width: 100%; max-width: 420px; }
-    .stat-card { flex: 1; background: #12121e; border: 1px solid #1e1e30; border-radius: 10px; padding: 10px 8px; text-align: center; }
-    .stat-label { font-size: 9px; color: #444; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 4px; }
-    .stat-value { font-family: 'Orbitron', monospace; font-size: clamp(16px,4vw,22px); font-weight: 700; color: #fff; }
-    .stat-value.best  { color: #f59e0b; }
-    .stat-value.level { color: #00d4ff; }
+    .stat-card {
+      flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md);
+      padding: 12px 10px; text-align: center; box-shadow: var(--shadow-sm);
+      transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+    }
+    .stat-label { font-size: 10px; color: var(--text-muted); letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 4px; }
+    .stat-value { font-family: 'Baloo 2', sans-serif; font-size: clamp(18px,4.4vw,24px); font-weight: 700; color: var(--text); }
+    #score-disp {
+      font-size: clamp(20px,5.2vw,28px);
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    .stat-value.best  { color: var(--accent-2); }
+    .stat-value.level { color: var(--accent); }
 
     /* ── Level bar ── */
-    .level-label { font-size: 10px; color: #444; letter-spacing: 1px; margin-bottom: 5px; max-width: 420px; width: 100%; text-align: left; }
-    .progress-bar-wrap { width: 100%; max-width: 420px; background: #12121e; border-radius: 6px; height: 6px; margin-bottom: 8px; overflow: hidden; }
-    .progress-bar { height: 100%; border-radius: 6px; background: linear-gradient(90deg,#7c3aed,#00d4ff); transition: width 0.4s ease; width: 0%; }
+    .level-label { font-size: 11px; color: var(--text-muted); letter-spacing: 1px; margin-bottom: 5px; max-width: 420px; width: 100%; text-align: left; }
+    .progress-bar-wrap {
+      width: 100%; max-width: 420px; background: var(--surface-2); border-radius: var(--radius-full);
+      height: 8px; margin-bottom: 8px; overflow: hidden;
+      transition: background-color 200ms ease;
+    }
+    .progress-bar { height: 100%; width: 100%; border-radius: var(--radius-full); background: linear-gradient(90deg, var(--accent), var(--accent-2)); transform: scaleX(0); transform-origin: left; transition: transform 0.4s cubic-bezier(0.4,0,0.2,1); }
 
     /* ── Obstacle counter ── */
     .obstacle-row {
@@ -58,12 +235,12 @@
       width: 100%; max-width: 420px; margin-bottom: 8px;
       min-height: 22px;
     }
-    .obs-label { font-size: 10px; color: #555; letter-spacing: 1px; white-space: nowrap; }
+    .obs-label { font-size: 10px; color: var(--text-muted); letter-spacing: 1px; white-space: nowrap; }
     .obs-pips  { display: flex; gap: 4px; flex-wrap: wrap; }
     .obs-pip {
-      width: 14px; height: 14px; border-radius: 3px;
-      background: #ff4d00;
-      box-shadow: 0 0 6px rgba(255,77,0,0.6);
+      width: 14px; height: 14px; border-radius: var(--radius-sm);
+      background: var(--obstacle-fg);
+      box-shadow: 0 0 6px color-mix(in srgb, var(--obstacle-fg) 50%, transparent);
       position: relative; overflow: hidden;
     }
     /* ⭐ icon inside pip */
@@ -74,42 +251,120 @@
 
     /* ── Hint bar ── */
     .hint-bar {
-      width: 100%; max-width: 420px; text-align: center;
+      max-width: 420px; text-align: center;
       font-size: 11px; letter-spacing: 1px; margin-bottom: 8px;
-      height: 18px; color: #333; transition: color 0.3s;
+      min-height: 18px; line-height: 18px; color: var(--text-muted);
+      background: var(--surface-2); border-radius: var(--radius-full); padding: 4px 12px;
+      transition: color 200ms ease, background-color 200ms ease;
     }
-    .hint-bar.active { color: #00d4ff; }
+    .hint-bar.active { color: var(--accent); }
+
+    /* ── Streak badge（B-1）：固定 reserve 一行高度，避免出現/淡出時版面跳動 ── */
+    .streak-row {
+      width: 100%; max-width: 420px; min-height: 22px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .streak-badge {
+      font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 13px;
+      letter-spacing: 0.5px;
+      color: var(--on-accent-2); background: var(--accent-2);
+      border-radius: var(--radius-full); padding: 2px 12px;
+      box-shadow: var(--shadow-sm);
+      opacity: 0; transform: scale(0.85);
+      transition: opacity 220ms ease, transform 220ms ease;
+    }
+    .streak-badge.show { opacity: 1; transform: scale(1); }
 
     /* ── Board ── */
     .board-wrap {
-      background: #0d0d1a; border: 1px solid #1a1a2e;
-      border-radius: 14px; padding: 12px; margin-bottom: 16px;
+      position: relative;
+      background: var(--board-bg); border: 1px solid var(--border);
+      border-radius: var(--radius-lg); padding: 12px; margin-bottom: 16px;
+      box-shadow: var(--shadow-md);
+      transition: background-color 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+    }
+    /* ── 危險預警（B-2）：totalMoves ≤ 3 時邊緣紅色呼吸 ── */
+    .board-wrap.danger {
+      animation: dangerPulse 2s ease-in-out infinite;
+    }
+    @keyframes dangerPulse {
+      0%,100% { box-shadow: 0 0 0 2px color-mix(in srgb, var(--danger) 55%, transparent), var(--shadow-md); }
+      50%      { box-shadow: 0 0 0 5px color-mix(in srgb, var(--danger) 85%, transparent), var(--shadow-md); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .board-wrap.danger {
+        animation: none;
+        box-shadow: 0 0 0 1px var(--danger), var(--shadow-md);
+      }
+    }
+
+    /* ── 消行粒子（B-3）：附著在 board-wrap 上 absolute 定位，不影響 layout ── */
+    .clear-particle {
+      position: absolute; top: 0; left: 0; border-radius: 2px;
+      pointer-events: none; z-index: 50;
+      animation-name: particleFly; animation-timing-function: ease-out; animation-fill-mode: forwards;
+    }
+    @keyframes particleFly {
+      0%   { transform: translate(-50%,-50%) translate(0,0) rotate(0deg); opacity: 1; }
+      100% { transform: translate(-50%,-50%) translate(var(--dx),var(--dy)) rotate(180deg); opacity: 0; }
     }
     #board { display: grid; grid-template-columns: repeat(9, var(--cell)); gap: var(--gap); }
 
     .cell {
       width: var(--cell); height: var(--cell);
-      background: #111120; border-radius: 5px; border: 1px solid #1a1a2e;
-      transition: background 0.08s; cursor: default;
+      background: var(--cell-bg); border-radius: var(--radius-sm); border: 1px solid var(--cell-border);
+      transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+      cursor: default;
       position: relative; overflow: hidden;
     }
+    .cell.cell-alt   { background: var(--cell-bg-alt); }
     .cell.has-piece  { border-color: transparent; }
     .cell.can-select { cursor: pointer; }
     .cell.preview    { opacity: 0.6; }
-    .cell.invalid-preview { background: rgba(255,60,60,0.28) !important; border-color: rgba(255,60,60,0.4) !important; }
+    .cell.invalid-preview {
+      background: color-mix(in srgb, var(--danger) 28%, transparent) !important;
+      border-color: color-mix(in srgb, var(--danger) 45%, transparent) !important;
+    }
     .cell.clearing   { animation: clearPop 0.38s ease forwards; }
+
+    /* will-clear: 預告此格會在放置後被消除（脈動成功色光） */
+    .cell.will-clear {
+      box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--success) 55%, transparent);
+      animation: willClearPulse 0.6s ease-in-out infinite;
+    }
+    @keyframes willClearPulse {
+      0%,100% { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--success) 45%, transparent); }
+      50%      { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--success) 95%, transparent); }
+    }
+
+    /* place-pop: 新放置方塊的落地動畫 */
+    .cell.place-pop { animation: placePop 0.22s ease-out; }
+    @keyframes placePop {
+      0%   { transform: scale(0.55); opacity: 0.4; }
+      100% { transform: scale(1);    opacity: 1; }
+    }
+
+    /* invalid-flash: 放置失敗回饋（桌面點擊無效格） */
+    .cell.invalid-flash { animation: cellShake 0.3s ease; }
+    @keyframes cellShake {
+      0%,100% { transform: translateX(0); }
+      20%      { transform: translateX(-3px); }
+      40%      { transform: translateX(3px); }
+      60%      { transform: translateX(-2px); }
+      80%      { transform: translateX(2px); }
+    }
 
     /* Obstacle cell styling */
     .cell.obstacle {
       border-color: transparent;
-      background: #1a0a00 !important;
+      background: var(--cell-obstacle-bg) !important;
     }
     .cell.obstacle::before {
       content: '';
       position: absolute; inset: 3px;
       border-radius: 3px;
-      background: #ff4d00;
-      box-shadow: 0 0 8px rgba(255,77,0,0.7), inset 0 0 4px rgba(255,200,0,0.3);
+      background: var(--obstacle-fg);
+      box-shadow: 0 0 8px color-mix(in srgb, var(--obstacle-fg) 55%, transparent), inset 0 0 4px rgba(255,200,0,0.3);
     }
     .cell.obstacle::after {
       content: '★';
@@ -121,11 +376,15 @@
       text-shadow: 0 0 4px rgba(255,200,0,0.8);
       z-index: 1;
     }
+    /* dark mode obstacle-fg is brighter — add a dark halo behind the star so it stays legible */
+    [data-theme="dark"] .cell.obstacle::after {
+      text-shadow: 0 0 2px rgba(0,0,0,0.6), 0 0 4px rgba(255,200,0,0.8);
+    }
     /* pulse glow on obstacle */
     .cell.obstacle::before { animation: obsPulse 2s ease-in-out infinite; }
     @keyframes obsPulse {
-      0%,100% { box-shadow: 0 0 6px rgba(255,77,0,0.5); }
-      50%      { box-shadow: 0 0 14px rgba(255,140,0,0.9), inset 0 0 6px rgba(255,220,0,0.4); }
+      0%,100% { box-shadow: 0 0 6px color-mix(in srgb, var(--obstacle-fg) 50%, transparent); }
+      50%      { box-shadow: 0 0 14px color-mix(in srgb, var(--obstacle-fg) 80%, transparent), inset 0 0 6px rgba(255,220,0,0.4); }
     }
 
     /* obstacle being cleared — special flash */
@@ -148,18 +407,19 @@
     .pieces-area { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; max-width: 420px; width: 100%; margin-bottom: 12px; min-height: 110px; }
     .piece-slot {
       width: 118px; min-height: 100px;
-      background: #12121e; border: 1px solid #1e1e30;
-      border-radius: 12px; padding: 10px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius-md); padding: 10px;
       display: flex; align-items: center; justify-content: center;
       cursor: pointer;
       touch-action: none;
-      transition: border-color 0.2s, transform 0.15s, opacity 0.2s, box-shadow 0.2s;
+      box-shadow: var(--shadow-sm);
+      transition: border-color 200ms ease, transform 150ms ease, opacity 200ms ease, box-shadow 200ms ease, background-color 200ms ease;
     }
-    .piece-slot:hover { border-color: #444; }
-    .piece-slot.selected { border-color: #00d4ff; box-shadow: 0 0 0 2px rgba(0,212,255,0.25); transform: scale(1.05); }
-    .piece-slot.empty   { cursor: default; border-style: dashed; border-color: #1a1a28; pointer-events: none; }
+    .piece-slot:hover { border-color: var(--accent); box-shadow: var(--shadow-md); }
+    .piece-slot.selected { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent), var(--shadow-md); transform: scale(1.05); }
+    .piece-slot.empty   { cursor: default; border-style: dashed; border-color: var(--border); opacity: 0.5; pointer-events: none; }
     .piece-grid { display: inline-grid; gap: 2px; }
-    .pc { border-radius: 3px; }
+    .pc { border-radius: 4px; }
 
     /* ── Ghost ── */
     #ghost { position: fixed; pointer-events: none; z-index: 1000; display: none; transform: translate(-50%,-50%); opacity: 0.78; }
@@ -170,35 +430,88 @@
     }
 
     /* ── Buttons ── */
-    .btn-row { display: flex; gap: 10px; }
+    .btn-row { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
     .btn {
-      font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 2px;
-      padding: 10px 22px; border-radius: 8px; cursor: pointer;
-      border: 1px solid #333; background: #12121e; color: #888;
-      transition: all 0.2s; text-transform: uppercase;
+      font-family: 'Baloo 2', 'Noto Sans TC', sans-serif; font-weight: 600; font-size: 14px; letter-spacing: 0.3px;
+      padding: 12px 24px; min-height: 44px; border-radius: var(--radius-md); cursor: pointer;
+      border: 1px solid var(--border); background: var(--surface); color: var(--text-muted);
+      box-shadow: var(--shadow-sm);
+      transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
+      text-transform: none;
     }
-    .btn:hover  { border-color: #00d4ff; color: #00d4ff; }
+    .btn:hover  { border-color: var(--accent); color: var(--accent); box-shadow: var(--shadow-md); }
     .btn:active { transform: scale(0.96); }
-    .btn.primary { background: #7c3aed; border-color: #7c3aed; color: #fff; }
-    .btn.primary:hover { background: #6d28d9; border-color: #6d28d9; }
+    .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+    .btn.primary:hover { filter: brightness(0.92); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: none; pointer-events: none; }
+
+    /* ── 鍵盤焦點樣式（C-3）：只在鍵盤等非指標互動時顯示 ring，滑鼠點擊不觸發 ── */
+    button:focus, .piece-slot:focus, #board:focus { outline: none; }
+    button:focus-visible, .piece-slot:focus-visible, #board:focus-visible {
+      outline: 2px solid var(--accent); outline-offset: 2px;
+    }
+    /* 螢幕報讀專用（C-3）：視覺隱藏但仍可被 AT 讀取 */
+    .visually-hidden {
+      position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+      overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
 
     /* ── Score pop ── */
     .score-pop {
       position: fixed; pointer-events: none; z-index: 999;
-      font-family: 'Orbitron', monospace; font-weight: 700; font-size: 22px;
+      font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 22px;
       white-space: nowrap; animation: floatUp 0.95s ease forwards;
     }
-    .score-pop.normal { color: #f59e0b; }
-    .score-pop.bonus  { color: #ff6b00; font-size: 26px; text-shadow: 0 0 12px rgba(255,140,0,0.8); }
+    .score-pop.normal { color: var(--accent-2); }
+    .score-pop.bonus  { color: var(--accent-2); font-size: 26px; text-shadow: 0 1px 3px rgba(0,0,0,0.15); }
+    [data-theme="dark"] .score-pop.bonus { text-shadow: 0 1px 3px rgba(0,0,0,0.5); }
     @keyframes floatUp {
       0%   { opacity:1; transform:translateY(0)    scale(1); }
       100% { opacity:0; transform:translateY(-80px) scale(1.35); }
     }
 
+    /* ── Combo pop（一次消 ≥2 行）── */
+    .combo-pop {
+      position: fixed; pointer-events: none; z-index: 999;
+      font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 32px;
+      color: var(--text); letter-spacing: 2px; white-space: nowrap;
+      text-shadow: 0 2px 8px color-mix(in srgb, var(--accent) 45%, transparent);
+      transform: translate(-50%,-50%) scale(0.6); opacity: 0;
+      animation: comboFloat 0.9s ease forwards;
+    }
+    @keyframes comboFloat {
+      0%   { opacity: 0; transform: translate(-50%,-50%) scale(0.6); }
+      20%  { opacity: 1; transform: translate(-50%,-50%) scale(1.15); }
+      100% { opacity: 0; transform: translate(-50%,-50%) scale(1); }
+    }
+    .board-wrap.combo-pulse { animation: comboPulse 0.35s ease; }
+    @keyframes comboPulse {
+      0%   { transform: scale(1); }
+      50%  { transform: scale(1.03); }
+      100% { transform: scale(1); }
+    }
+
+    /* ── 新紀錄 toast ── */
+    .record-toast {
+      position: fixed; top: 14px; left: 50%; z-index: 998;
+      font-family: 'Baloo 2', sans-serif; font-weight: 700; font-size: 14px;
+      color: var(--on-accent-2); background: var(--accent-2); border: none;
+      box-shadow: var(--shadow-md);
+      padding: 8px 16px; border-radius: var(--radius-full); letter-spacing: 1px;
+      transform: translate(-50%,-14px); opacity: 0;
+      animation: recordToastAnim 2.2s ease forwards;
+    }
+    @keyframes recordToastAnim {
+      0%   { opacity: 0; transform: translate(-50%,-14px); }
+      12%  { opacity: 1; transform: translate(-50%,0); }
+      85%  { opacity: 1; transform: translate(-50%,0); }
+      100% { opacity: 0; transform: translate(-50%,-14px); }
+    }
+
     /* ── Level-up flash ── */
     #levelup-flash {
       position: fixed; inset: 0; z-index: 300; pointer-events: none;
-      background: rgba(124,58,237,0.18);
+      background: color-mix(in srgb, var(--accent) 18%, transparent);
       opacity: 0; display: none;
     }
     #levelup-flash.show { display: block; animation: lvlFlash 0.7s ease forwards; }
@@ -208,27 +521,150 @@
       100% { opacity: 0; }
     }
 
-    /* ── Game Over overlay ── */
+    /* ── Game Over overlay ──
+       Scrim is always a fixed dark backdrop regardless of active theme, so
+       everything inside it intentionally uses hardcoded dark-theme token
+       values rather than var() — see design spec §C.12. */
     #game-over-overlay {
       display: none; position: fixed; inset: 0; z-index: 200;
-      background: rgba(0,0,0,0.88);
+      background: rgba(23,21,31,0.88);
       align-items: center; justify-content: center;
       flex-direction: column; gap: 18px;
       backdrop-filter: blur(4px);
     }
     #game-over-overlay.show { display: flex; }
-    .over-title  { font-family:'Orbitron',monospace; font-size:clamp(28px,7vw,38px); font-weight:900; color:#fff; letter-spacing:4px; }
-    .over-sub    { font-size:13px; color:#555; letter-spacing:1px; }
-    .over-score  { font-family:'Orbitron',monospace; font-size:clamp(40px,10vw,56px); font-weight:900; color:#f59e0b; }
-    .over-record { font-family:'Orbitron',monospace; font-size:13px; color:#7c3aed; letter-spacing:2px; }
-    .over-best   { font-size:13px; color:#444; font-family:'Orbitron',monospace; }
+    .over-title  { font-family:'Baloo 2',sans-serif; font-size:clamp(28px,7vw,38px); font-weight:800; color:#F1EEFB; letter-spacing:1px; text-transform: uppercase; }
+    .over-sub    { font-size:13px; color:#A9A3C2; letter-spacing:1px; }
+    .over-score  { font-family:'Baloo 2',sans-serif; font-size:clamp(40px,10vw,56px); font-weight:800; color:#FFB454; }
+    .over-record { font-family:'Baloo 2',sans-serif; font-size:13px; color:#9B7BFF; letter-spacing:2px; }
+    .over-best   { font-size:13px; color:#6B6580; font-family:'Baloo 2',sans-serif; }
+    #retry-btn { background:#9B7BFF; border-color:#9B7BFF; color:#17151F; }
+
+    /* ── 統計／成就 overlay（C-1/C-2）
+       比照 game-over-overlay 用固定深色 token（§C.12 慣例，scrim 永遠是暗底，不隨主題切換）；
+       tab 結構通用化，Wave D 會再加第三個「歷史」tab，不需改這裡的樣式規則。 ── */
+    #stats-overlay {
+      display: none; position: fixed; inset: 0; z-index: 220;
+      background: rgba(23,21,31,0.88);
+      align-items: center; justify-content: center;
+      backdrop-filter: blur(4px);
+      padding: 20px;
+    }
+    #stats-overlay.show { display: flex; }
+    .info-panel {
+      position: relative; width: 100%; max-width: 420px; max-height: 82vh;
+      background: #1F1C2B; border: 1px solid #322D45; border-radius: var(--radius-lg);
+      box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .info-close-btn {
+      position: absolute; top: 8px; right: 8px; z-index: 2;
+      width: 32px; height: 32px; border-radius: var(--radius-full);
+      background: transparent; border: none; color: #A9A3C2; cursor: pointer;
+      font-size: 15px; display: flex; align-items: center; justify-content: center;
+    }
+    .info-close-btn:hover { color: #F1EEFB; }
+    .info-tabs { display: flex; border-bottom: 1px solid #322D45; padding: 0 6px; }
+    .info-tab {
+      flex: 1; background: none; border: none; cursor: pointer;
+      font-family: 'Baloo 2','Noto Sans TC',sans-serif; font-weight: 600; font-size: 14px;
+      color: #A9A3C2; padding: 16px 8px 12px; border-bottom: 2px solid transparent;
+    }
+    .info-tab.active { color: #F1EEFB; border-bottom-color: #9B7BFF; }
+    .info-tab-panel { padding: 18px 20px 22px; overflow-y: auto; }
+    .info-tab-panel[hidden] { display: none; }
+
+    .stats-list { display: flex; flex-direction: column; gap: 10px; }
+    .stats-list-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+    .stats-list-label { font-size: 13px; color: #A9A3C2; letter-spacing: 0.5px; }
+    .stats-list-value { font-family: 'Baloo 2',sans-serif; font-weight: 700; font-size: 18px; color: #F1EEFB; }
+
+    .ach-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .ach-card {
+      display: flex; align-items: center; gap: 8px;
+      padding: 10px 12px; border-radius: var(--radius-md);
+      background: #272335; border: 1px solid #322D45;
+    }
+    .ach-card .ach-icon { font-size: 18px; }
+    .ach-card .ach-label { font-size: 12px; font-weight: 600; color: #F1EEFB; line-height: 1.3; }
+    .ach-card.locked { opacity: 0.55; }
+    .ach-card.locked .ach-label { color: #A9A3C2; }
+
+    /* ── 歷史／回放（D-1/D-2）：沿用 stats-overlay 固定深色 token 慣例 ──
+       .btn 本身用 var(--surface) 等會隨主題切換的 token，但 stats-overlay 的 scrim 固定暗底（§C.12），
+       故這裡的 .btn 也要覆寫成固定深色值（理由同 #retry-btn），否則淺色主題下按鈕會變成刺眼的白底。 */
+    #stats-overlay .btn { background:#272335; border-color:#322D45; color:#A9A3C2; }
+    #stats-overlay .btn:hover { border-color:#9B7BFF; color:#9B7BFF; }
+    #stats-overlay .btn.primary { background:#9B7BFF; border-color:#9B7BFF; color:#17151F; }
+    #stats-overlay .btn.primary:hover { filter:brightness(0.92); }
+    .history-empty { color:#A9A3C2; font-size:13px; text-align:center; padding:24px 0; }
+    .history-toolbar { display:flex; justify-content:flex-end; margin-bottom:10px; }
+    .history-list { display:flex; flex-direction:column; gap:10px; }
+    .history-card { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+      background:#272335; border:1px solid #322D45; border-radius:var(--radius-md); padding:10px 12px; }
+    .history-thumb { display:grid; grid-template-columns:repeat(9,5px); grid-template-rows:repeat(9,5px);
+      gap:1px; background:#1B1828; padding:3px; border-radius:4px; flex-shrink:0; }
+    .history-thumb-cell { width:5px; height:5px; border-radius:1px; background:transparent; }
+    .history-card-info { flex:1; min-width:120px; }
+    .history-card-date { font-size:11px; color:#A9A3C2; margin-bottom:2px; }
+    .history-card-stats { font-size:12px; color:#F1EEFB; }
+    .history-replay-btn { padding:8px 12px; min-height:34px; font-size:12px; white-space:nowrap; flex-shrink:0; }
+    #history-list-view[hidden], #history-replay-view[hidden] { display:none; }
+    .replay-score { text-align:center; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; color:#FFB454; margin-bottom:8px; }
+    /* mini board 重用 .cell class，但要局部覆寫 --cell-bg 等 token 為固定深色值：
+       .cell 的顏色本來會隨頁面當下主題（淺/深）走，若不覆寫，淺色主題下 mini board 會變成
+       白格子浮在固定深色 overlay 上，不符合「沿用 overlay 固定深色 token 慣例」。 */
+    #replay-board-wrap {
+      --cell:24px; --gap:2px;
+      --board-bg:#1B1828; --cell-bg:#211D30; --cell-bg-alt:#2A2540; --cell-border:#322D45;
+      --cell-obstacle-bg:#3A1410; --obstacle-fg:#FF6B4A;
+      display:flex; justify-content:center;
+      background:var(--board-bg); border:1px solid var(--cell-border);
+      border-radius:var(--radius-lg); padding:10px;
+    }
+    #replay-board { display:grid; grid-template-columns:repeat(9,var(--cell)); gap:var(--gap); }
+    .replay-status { text-align:center; font-size:12px; color:#A9A3C2; min-height:16px; margin-top:8px; }
+    .replay-controls { display:flex; align-items:center; justify-content:center; gap:8px; flex-wrap:wrap; margin-top:10px; }
+    .replay-ctrl-btn { padding:8px 14px; min-height:36px; font-size:13px; }
+    .replay-speed-group { display:flex; gap:4px; }
+    .replay-speed-btn { padding:6px 10px; min-height:32px; font-size:12px; }
+    .replay-speed-btn.active { border-color:#9B7BFF; color:#F1EEFB; }
 
     @media (max-width: 430px) { :root{--cell:36px;} .piece-slot{width:100px;} }
     @media (max-width: 360px) { :root{--cell:32px;} .pieces-area{gap:8px;} .piece-slot{width:90px;} }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
 <body>
 <div id="game-root">
+  <button id="theme-toggle-btn" type="button" aria-label="切換淺色/深色主題">
+    <svg id="icon-sun" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="4"/>
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>
+    </svg>
+    <svg id="icon-moon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>
+    </svg>
+  </button>
+  <button id="sound-toggle-btn" type="button" aria-label="關閉音效">
+    <svg id="icon-sound-on" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 5 6 9H2v6h4l5 4V5z"/>
+      <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+      <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+    </svg>
+    <svg id="icon-sound-off" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M11 5 6 9H2v6h4l5 4V5z"/>
+      <line x1="22" y1="9" x2="16" y2="15"/>
+      <line x1="16" y1="9" x2="22" y2="15"/>
+    </svg>
+  </button>
   <div class="title">Block Puzzle</div>
   <div class="subtitle">方塊消除挑戰</div>
 
@@ -247,15 +683,22 @@
     <div class="obs-pips" id="obs-pips"></div>
   </div>
 
+  <div class="streak-row" id="streak-row"><span class="streak-badge" id="streak-badge" aria-hidden="true"></span></div>
   <div class="hint-bar" id="hint-bar">點擊下方方塊來選取</div>
 
-  <div class="board-wrap"><div id="board"></div></div>
+  <div class="board-wrap"><div id="board" role="grid" aria-label="9x9 遊戲棋盤" tabindex="-1"></div></div>
   <div class="pieces-area" id="pieces-area"></div>
-  <div class="btn-row"><button class="btn primary" id="new-game-btn">新遊戲</button></div>
+  <div class="btn-row">
+    <button class="btn primary" id="new-game-btn">新遊戲</button>
+    <button class="btn" id="undo-btn" disabled aria-disabled="true">復原</button>
+    <button class="btn" id="stats-btn" type="button">統計</button>
+    <button class="btn" id="install-btn" type="button" style="display:none">安裝 App</button>
+  </div>
 </div>
 
 <div id="ghost"><div id="ghost-inner"></div></div>
 <div id="levelup-flash"></div>
+<div id="aria-announcer" class="visually-hidden" aria-live="polite"></div>
 
 <div id="game-over-overlay">
   <div class="over-title">GAME OVER</div>
@@ -266,6 +709,45 @@
   <button class="btn primary" id="retry-btn">再玩一次</button>
 </div>
 
+<!-- 統計／成就 overlay（C-1/C-2）：tab 機制通用，Wave D 會再加第三個「歷史」tab -->
+<div id="stats-overlay">
+  <div class="info-panel">
+    <button class="info-close-btn" id="stats-close-btn" type="button" aria-label="關閉">✕</button>
+    <div class="info-tabs" role="tablist" aria-label="統計與成就">
+      <button class="info-tab active" type="button" role="tab" aria-selected="true" data-tab="stats" id="tab-btn-stats" aria-controls="tab-panel-stats">統計</button>
+      <button class="info-tab" type="button" role="tab" aria-selected="false" data-tab="ach" id="tab-btn-ach" aria-controls="tab-panel-ach">成就</button>
+      <button class="info-tab" type="button" role="tab" aria-selected="false" data-tab="history" id="tab-btn-history" aria-controls="tab-panel-history">歷史</button>
+    </div>
+    <div class="info-tab-panel active" id="tab-panel-stats" data-tab-panel="stats" role="tabpanel" aria-labelledby="tab-btn-stats"></div>
+    <div class="info-tab-panel" id="tab-panel-ach" data-tab-panel="ach" role="tabpanel" aria-labelledby="tab-btn-ach" hidden></div>
+    <!-- 歷史／回放（D-1/D-2）：清單與回放子面板同置一個 tab-panel 內，用 hidden 切換（同 overlay 內切換） -->
+    <div class="info-tab-panel" id="tab-panel-history" data-tab-panel="history" role="tabpanel" aria-labelledby="tab-btn-history" hidden>
+      <div id="history-list-view">
+        <div class="history-toolbar"><button class="btn" id="history-clear-btn" type="button">清除歷史</button></div>
+        <div class="history-list" id="history-list"></div>
+      </div>
+      <div id="history-replay-view" hidden>
+        <div class="replay-score" id="replay-score">分數：0</div>
+        <div id="replay-board-wrap"><div id="replay-board"></div></div>
+        <div class="replay-status" id="replay-status"></div>
+        <div class="replay-controls">
+          <button class="btn replay-ctrl-btn" id="replay-prev-btn" type="button">上一步</button>
+          <button class="btn primary replay-ctrl-btn" id="replay-play-btn" type="button">播放</button>
+          <button class="btn replay-ctrl-btn" id="replay-next-btn" type="button">下一步</button>
+        </div>
+        <div class="replay-controls">
+          <div class="replay-speed-group">
+            <button class="btn replay-speed-btn active" type="button" data-speed="1">1x</button>
+            <button class="btn replay-speed-btn" type="button" data-speed="2">2x</button>
+            <button class="btn replay-speed-btn" type="button" data-speed="4">4x</button>
+          </div>
+          <button class="btn replay-ctrl-btn" id="replay-close-btn" type="button">關閉回放</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 
@@ -273,7 +755,9 @@
    CONSTANTS
 ══════════════════════════════════════ */
 const COLS = 9, ROWS = 9;
-const COLORS = ['#00d4ff','#ff6b35','#7c3aed','#10b981','#f59e0b','#ec4899','#3b82f6','#e11d48','#84cc16'];
+// 波次2主題改版：COLORS 改為 CSS variable 字串，inline style 支援 var()，
+// 主題切換時已放置方塊的顏色會隨 --piece-N token 自動改變（design spec §C.11）。
+const COLORS = ['var(--piece-1)','var(--piece-2)','var(--piece-3)','var(--piece-4)','var(--piece-5)','var(--piece-6)','var(--piece-7)','var(--piece-8)','var(--piece-9)'];
 const COMBO_BONUS = [0,10,30,60,100,150,210,280,360];
 
 // Special sentinel value stored in grid cells to mark obstacles
@@ -310,15 +794,55 @@ const PIECE_DEFS = [
 let grid, score, best, level, pieces;
 let selIdx = null;
 let previewPos = null;
+let recordToastShown = false; // 本局是否已顯示過「新紀錄」toast（B15）
+let streak = 0; // 連續回合 streak（B-1）：有消行則+1，斷檔（無消行）歸零
+
+// D-2：回放記錄（本局進行中）。moves 隨 saveProg 存檔（重載後回放不斷檔），
+// initialGrid 是開局快照；舊存檔無此二欄 → loadState 寬鬆 default（見下）。
+let moves = [];
+let initialGrid = null;
+const MOVES_CAP = 500; // 單局上限 500 步，超過停止記錄該局回放（歷史仍記分數與 final grid）
+// D-1：本局累計消行數／本局最高 streak，供 game over 時寫入歷史紀錄（與跨局累計的 stats.* 分開）
+let gameLines = 0;
+let gameMaxStreak = 0;
 
 /* ══════════════════════════════════════
    PERSISTENCE
 ══════════════════════════════════════ */
 const SK_BEST = 'bpz_v4_best', SK_ST = 'bpz_v4_state';
+
+// 波次2主題改版：舊存檔可能仍存有波次1的固定 hex 色碼（COLORS 改為 var(--piece-N) 之前的值）。
+// 讀檔時做一次性映射，讓舊局的方塊也能吃到新的主題色 token；映射不到的字串（如 OBS 或未知值）原樣保留，不炸。
+const LEGACY_COLOR_MAP = {
+  '#00d4ff': 'var(--piece-1)',
+  '#ff6b35': 'var(--piece-2)',
+  '#7c3aed': 'var(--piece-3)',
+  '#10b981': 'var(--piece-4)',
+  '#f59e0b': 'var(--piece-5)',
+  '#ec4899': 'var(--piece-6)',
+  '#3b82f6': 'var(--piece-7)',
+  '#e11d48': 'var(--piece-8)',
+  '#84cc16': 'var(--piece-9)',
+};
+function migrateLegacyColor(v){
+  if(typeof v!=='string' || v===OBS) return v;
+  const mapped = LEGACY_COLOR_MAP[v.toLowerCase()];
+  return mapped || v;
+}
+function migrateGridColors(g){
+  if(!Array.isArray(g)) return g;
+  return g.map(row=>Array.isArray(row)?row.map(migrateLegacyColor):row);
+}
+function migratePieceColors(ps){
+  if(!Array.isArray(ps)) return ps;
+  return ps.map(p=> (p && typeof p==='object' && p.color) ? Object.assign({},p,{color:migrateLegacyColor(p.color)}) : p);
+}
+
 function saveProg(){
   try {
     localStorage.setItem(SK_BEST, best);
-    localStorage.setItem(SK_ST, JSON.stringify({grid,score,level,pieces}));
+    // D-2：moves/initialGrid 隨存檔一起存，重載後回放不斷檔；gameLines/gameMaxStreak 供該局結束時寫入歷史
+    localStorage.setItem(SK_ST, JSON.stringify({grid,score,level,pieces,streak,moves,initialGrid,gameLines,gameMaxStreak}));
   } catch(e){}
 }
 function loadBest(){ try{ best=parseInt(localStorage.getItem(SK_BEST))||0; }catch(e){best=0;} }
@@ -326,10 +850,317 @@ function loadState(){
   try{
     const s=JSON.parse(localStorage.getItem(SK_ST));
     if(!s||!s.grid||!s.pieces) return false;
-    ({grid,score,level,pieces}=s); return true;
+    if(typeof s.score!=='number' || typeof s.level!=='number') return false;
+    ({grid,score,level,pieces}=s);
+    grid=migrateGridColors(grid);
+    pieces=migratePieceColors(pieces);
+    // B-1：舊存檔沒有 streak 欄位，寬鬆 default 為 0，不可讓舊檔被拒
+    streak = typeof s.streak==='number' ? s.streak : 0;
+    // D-2：舊存檔無 moves/initialGrid → moves 空陣列起算，initialGrid 用載入當下的 grid 快照
+    // （該局回放從載入點起算），寬鬆處理不可拒載
+    moves = Array.isArray(s.moves) ? s.moves : [];
+    initialGrid = Array.isArray(s.initialGrid) ? migrateGridColors(s.initialGrid) : deepCloneGrid(grid);
+    gameLines = typeof s.gameLines==='number' ? s.gameLines : 0;
+    gameMaxStreak = typeof s.gameMaxStreak==='number' ? s.gameMaxStreak : 0;
+    return true;
   }catch(e){ return false; }
 }
 function clearState(){ try{ localStorage.removeItem(SK_ST); }catch(e){} }
+
+/* ══════════════════════════════════════
+   STATS（C-1）
+   累計數據存於獨立 key 'bpz_v4_stats'，與單局存檔（SK_ST）分開，跨局累計不會被 newGame 清掉。
+   舊玩家無此 key／欄位缺漏 → 每個欄位各自寬鬆 typeof 檢查，全 0 起算，不可讓載入失敗。
+══════════════════════════════════════ */
+const SK_STATS = 'bpz_v4_stats';
+let stats = {games:0, totalScore:0, totalLines:0, maxCombo:0, maxStreak:0};
+function loadStats(){
+  try{
+    const s = JSON.parse(localStorage.getItem(SK_STATS));
+    stats = {
+      games:      (s && typeof s.games==='number')      ? s.games      : 0,
+      totalScore: (s && typeof s.totalScore==='number') ? s.totalScore : 0,
+      totalLines: (s && typeof s.totalLines==='number') ? s.totalLines : 0,
+      maxCombo:   (s && typeof s.maxCombo==='number')   ? s.maxCombo   : 0,
+      maxStreak:  (s && typeof s.maxStreak==='number')  ? s.maxStreak  : 0,
+    };
+  }catch(e){
+    stats = {games:0, totalScore:0, totalLines:0, maxCombo:0, maxStreak:0};
+  }
+}
+function saveStats(){
+  try{ localStorage.setItem(SK_STATS, JSON.stringify(stats)); }catch(e){}
+}
+loadStats();
+
+/* ══════════════════════════════════════
+   歷史紀錄（D-1）
+   localStorage 'bpz_v4_history'：陣列，每筆＝一局，最新在前（unshift），保留最近 20 局。
+   grid 快照壓縮成 81 字元字串（'.'=空／'X'=障礙／'1'-'9'=COLORS index+1），縮圖與回放共用解碼。
+══════════════════════════════════════ */
+const SK_HISTORY = 'bpz_v4_history';
+const MAX_HISTORY = 20;
+let history = [];
+function loadHistory(){
+  try{
+    const arr = JSON.parse(localStorage.getItem(SK_HISTORY));
+    history = Array.isArray(arr) ? arr : [];
+  }catch(e){ history = []; }
+}
+function saveHistory(){
+  try{ localStorage.setItem(SK_HISTORY, JSON.stringify(history)); }catch(e){}
+}
+loadHistory();
+
+function encodeGridCell(v){
+  if(v===null || v===undefined) return '.';
+  if(v===OBS) return 'X';
+  const idx = COLORS.indexOf(v);
+  return idx>=0 ? String(idx+1) : '.';
+}
+function decodeGridCell(ch){
+  if(ch==='X') return OBS;
+  const n = parseInt(ch,10);
+  return (n>=1 && n<=COLORS.length) ? COLORS[n-1] : null;
+}
+function encodeGrid(g){
+  let s='';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) s+=encodeGridCell(g[r][c]);
+  return s;
+}
+function decodeGrid(str){
+  const g=[];
+  for(let r=0;r<ROWS;r++){
+    const row=[];
+    for(let c=0;c<COLS;c++) row.push(decodeGridCell(str[r*COLS+c]));
+    g.push(row);
+  }
+  return g;
+}
+
+// game over 時寫入一筆歷史（見 showGameOver 呼叫處，沿用 fromResume guard 防重複）。
+// moves 超過 MOVES_CAP（局過長）時存 null，歷史仍保留分數/等級/縮圖，UI 標注「局過長，無回放」。
+function recordHistoryEntry(){
+  const truncated = moves.length >= MOVES_CAP;
+  const entry = {
+    ts: Date.now(),
+    score, level,
+    lines: gameLines,
+    maxStreak: gameMaxStreak,
+    finalGrid: encodeGrid(grid),
+    initialGrid: encodeGrid(initialGrid),
+    moves: truncated ? null : moves.slice(),
+  };
+  history.unshift(entry);
+  if(history.length > MAX_HISTORY) history.length = MAX_HISTORY;
+  saveHistory();
+}
+
+/* ══════════════════════════════════════
+   SOUND（A-1）
+   Web Audio API 純合成（oscillator + gain envelope），零音檔素材。
+   AudioContext 延遲到首次使用者互動才建立（pointerdown/touchstart once），
+   且 sound off 時完全不建立、不合成，符合 autoplay 政策。
+══════════════════════════════════════ */
+const SK_SOUND = 'bpz_v4_sound';
+let soundOn = true;
+let actx = null;        // 延遲建立的 AudioContext
+let masterGain = null;  // 固定小聲的總音量節點（~0.15）
+
+function loadSoundPref(){
+  try{ soundOn = localStorage.getItem(SK_SOUND) !== 'off'; }catch(e){ soundOn = true; }
+}
+function saveSoundPref(){
+  try{ localStorage.setItem(SK_SOUND, soundOn ? 'on' : 'off'); }catch(e){}
+}
+loadSoundPref();
+
+// 只有 soundOn 時才建立/恢復 AudioContext；off 時完全不建立（驗收重點：零 AudioContext）
+function ensureAudioCtx(){
+  if(!soundOn) return null;
+  if(!actx){
+    try{
+      actx = new (window.AudioContext||window.webkitAudioContext)();
+      masterGain = actx.createGain();
+      masterGain.gain.value = 0.15;
+      masterGain.connect(actx.destination);
+    }catch(e){ actx=null; }
+  } else if(actx.state==='suspended'){
+    actx.resume().catch(()=>{});
+  }
+  return actx;
+}
+function primeAudioOnce(){ ensureAudioCtx(); }
+document.addEventListener('pointerdown', primeAudioOnce, {once:true});
+document.addEventListener('touchstart', primeAudioOnce, {once:true, passive:true});
+
+// 單一 oscillator + gain envelope 的短音；opts 決定波形/延遲/峰值音量/滑音
+function playTone(freq, dur, opts){
+  if(!soundOn) return;
+  const ctx = ensureAudioCtx();
+  if(!ctx || !masterGain) return;
+  opts = opts || {};
+  const startAt = ctx.currentTime + (opts.delay||0);
+  const osc = ctx.createOscillator();
+  const gain = ctx.createGain();
+  osc.type = opts.type || 'sine';
+  osc.frequency.setValueAtTime(freq, startAt);
+  if(opts.slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(1,opts.slideTo), startAt+dur);
+  const peak = opts.gain!=null ? opts.gain : 1;
+  gain.gain.setValueAtTime(0.0001, startAt);
+  gain.gain.exponentialRampToValueAtTime(peak, startAt+0.012);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startAt+dur);
+  osc.connect(gain); gain.connect(masterGain);
+  osc.start(startAt); osc.stop(startAt+dur+0.02);
+}
+
+function sfxPlace(){ playTone(660,0.07,{type:'triangle'}); }
+function sfxInvalid(){ playTone(120,0.16,{type:'sine',gain:0.8}); }
+function sfxClear(total){
+  const base=[440,523,659,784][Math.min(Math.max(total,1),4)-1];
+  playTone(base,0.16,{type:'triangle'});
+  playTone(base*1.5,0.18,{type:'triangle',delay:0.05,gain:0.7});
+}
+// streak≥2 起的加成音，音高隨 streak 遞增（接在 sfxClear 之後播放，仿其寫法）；上限避免過高頻率刺耳
+function sfxStreak(n){
+  const base=660+Math.min(n,12)*36;
+  playTone(base,0.12,{type:'sine',gain:0.5,delay:0.12});
+}
+function sfxLevelUp(){
+  playTone(523,0.12,{type:'square',gain:0.5});
+  playTone(784,0.18,{type:'square',delay:0.12,gain:0.5});
+}
+function sfxRecord(){
+  [523,659,784,1046].forEach((f,i)=>playTone(f,0.14,{delay:i*0.07,type:'triangle',gain:0.6}));
+}
+// 成就達成音（C-2）：仿 sfxRecord 寫法，三音上行琶音，音色與新紀錄區隔（triangle→sine）
+function sfxAchievement(){
+  [659,880,1108].forEach((f,i)=>playTone(f,0.13,{delay:i*0.08,type:'sine',gain:0.55}));
+}
+function sfxGameOver(){
+  [392,330,262].forEach((f,i)=>playTone(f,0.22,{delay:i*0.15,type:'sawtooth',gain:0.5}));
+}
+function sfxClick(){ playTone(880,0.035,{type:'square',gain:0.4}); }
+
+function initSoundToggle(){
+  const btn = document.getElementById('sound-toggle-btn');
+  if(!btn) return;
+  const sync = () => {
+    btn.classList.toggle('muted', !soundOn);
+    btn.setAttribute('aria-label', soundOn ? '關閉音效' : '開啟音效');
+  };
+  sync();
+  btn.addEventListener('click', ()=>{
+    soundOn = !soundOn;
+    saveSoundPref();
+    sync();
+    if(soundOn){ ensureAudioCtx(); sfxClick(); }
+  });
+}
+
+/* ══════════════════════════════════════
+   成就徽章（C-2）
+   8 個成就，達成後永久保留（localStorage 'bpz_v4_ach' 存已達成 id 陣列，不隨單局重置）；
+   toast 沿用 record-toast 樣式，但用佇列讓同時達成多個成就時依序顯示、不重疊。
+══════════════════════════════════════ */
+const SK_ACH = 'bpz_v4_ach';
+const ACHIEVEMENTS = [
+  {id:'first_clear',  label:'首次消行'},
+  {id:'double_clear', label:'單次雙消'},
+  {id:'triple_clear', label:'單次三消'},
+  {id:'streak5',      label:'連續 5 回合消行'},
+  {id:'score500',     label:'單局 500 分'},
+  {id:'score1000',    label:'單局 1000 分'},
+  {id:'level5',       label:'等級 5'},
+  {id:'clear_board',  label:'清空全盤'},
+];
+let achieved = new Set();
+function loadAchievements(){
+  try{
+    const arr = JSON.parse(localStorage.getItem(SK_ACH));
+    achieved = new Set(Array.isArray(arr) ? arr.filter(x=>typeof x==='string') : []);
+  }catch(e){ achieved = new Set(); }
+}
+function saveAchievements(){
+  try{ localStorage.setItem(SK_ACH, JSON.stringify(Array.from(achieved))); }catch(e){}
+}
+loadAchievements();
+
+let achToastQueue = [];
+let achToastShowing = false;
+function showNextAchievementToast(){
+  if(achToastQueue.length===0){ achToastShowing=false; return; }
+  achToastShowing = true;
+  const label = achToastQueue.shift();
+  const el=document.createElement('div');
+  el.className='record-toast'; // 沿用新紀錄 toast 的樣式
+  el.textContent='🏅 成就：'+label;
+  document.body.appendChild(el);
+  el.addEventListener('animationend',()=>{ el.remove(); showNextAchievementToast(); });
+}
+function queueAchievementToast(label){
+  achToastQueue.push(label);
+  if(!achToastShowing) showNextAchievementToast();
+}
+// 已達成不再重複觸發（Set 去重）；達成當下 toast 排隊顯示＋播音效＋螢幕報讀
+function unlockAchievement(id){
+  if(achieved.has(id)) return;
+  achieved.add(id);
+  saveAchievements();
+  const def = ACHIEVEMENTS.find(a=>a.id===id);
+  const label = def ? def.label : id;
+  queueAchievementToast(label);
+  sfxAchievement();
+  announce('成就達成：'+label);
+}
+
+/* ══════════════════════════════════════
+   UNDO 一步（A-2）
+   單層快照：每次 doPlace 成功「前」記錄完整回合狀態，undo 後即作廢，
+   不進 localStorage（重載後不可 undo）。
+══════════════════════════════════════ */
+let undoSnapshot = null;
+let pendingClearTimer = null; // doPlace 消行後 450ms 重繪的 timer id，undo/newGame 需能取消
+
+function deepCloneGrid(g){ return g.map(row=>row.slice()); }
+
+function takeUndoSnapshot(){
+  undoSnapshot = {
+    grid: deepCloneGrid(grid),
+    pieces: pieces.map(p=>p), // piece 物件本身不會被原地修改，複製陣列容器即可
+    score, level, best, recordToastShown, streak, // B-1：streak 也要能被 undo 回滾，否則 undo 後狀態不一致
+    movesLen: moves.length, gameLines, gameMaxStreak // D-2：回放記錄也要能被 undo 回滾（截斷回本次放置前的長度）
+  };
+  updateUndoBtn();
+}
+function resetUndo(){
+  undoSnapshot = null;
+  updateUndoBtn();
+}
+function updateUndoBtn(){
+  const btn = document.getElementById('undo-btn');
+  if(!btn) return;
+  const enabled = !!undoSnapshot;
+  btn.disabled = !enabled;
+  btn.setAttribute('aria-disabled', enabled ? 'false' : 'true');
+}
+function doUndo(){
+  if(!undoSnapshot) return;
+  if(document.getElementById('game-over-overlay').classList.contains('show')) return; // game over 不給續命
+  if(pendingClearTimer){ clearTimeout(pendingClearTimer); pendingClearTimer=null; }
+  const s = undoSnapshot;
+  grid = deepCloneGrid(s.grid);
+  pieces = s.pieces.map(p=>p);
+  score = s.score; level = s.level; best = s.best; recordToastShown = s.recordToastShown;
+  streak = s.streak; // B-1：回滾 streak，避免 undo 後 streak 與畫面/音效不一致
+  moves.length = s.movesLen; gameLines = s.gameLines; gameMaxStreak = s.gameMaxStreak; // D-2：回滾回放記錄
+  undoSnapshot = null;
+  selIdx = null; clearPreview(); hideGhost();
+  renderBoard(); renderPieces(); updateStats(); renderObsPips(); updateUndoBtn(); updateDangerState();
+  setHint(isTouchDevice()?'長按方塊開始拖動':'點擊下方方塊來選取', false);
+  saveProg();
+  sfxClick();
+}
 
 /* ══════════════════════════════════════
    HELPERS
@@ -338,6 +1169,22 @@ const randColor = () => COLORS[Math.floor(Math.random()*COLORS.length)];
 const randPiece = () => ({shape:PIECE_DEFS[Math.floor(Math.random()*PIECE_DEFS.length)], color:randColor()});
 const emptyGrid = () => Array.from({length:ROWS},()=>Array(COLS).fill(null));
 
+// D-2：回放記錄用 — 把 piece.shape 反查回 PIECE_DEFS 的 index（存 d 供回放重建 shape，不存整個形狀陣列）。
+// 不可用 PIECE_DEFS.indexOf(piece.shape)：存檔重載後 pieces 是 JSON 深拷貝，陣列參照不再相同，
+// indexOf(===比較) 會失敗，必須用值比較。
+function shapesEqual(a,b){
+  if(a.length!==b.length) return false;
+  for(let i=0;i<a.length;i++){
+    if(a[i].length!==b[i].length) return false;
+    for(let j=0;j<a[i].length;j++) if(!!a[i][j]!==!!b[i][j]) return false;
+  }
+  return true;
+}
+function findPieceDefIndex(shape){
+  for(let i=0;i<PIECE_DEFS.length;i++) if(shapesEqual(PIECE_DEFS[i],shape)) return i;
+  return -1;
+}
+
 // Count obstacles currently on the grid
 function countObstacles(){
   let n=0;
@@ -345,14 +1192,17 @@ function countObstacles(){
   return n;
 }
 
-// Spawn exactly `n` obstacles into empty cells (random positions)
+// Spawn exactly `n` obstacles into empty cells (random positions).
+// 回傳實際生成的座標陣列（D-2：回放需要記錄該步生成的障礙物座標，才能在重演時重現）。
 function spawnObstacles(n){
   const empty=[];
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(!grid[r][c]) empty.push([r,c]);
   // Shuffle
   for(let i=empty.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [empty[i],empty[j]]=[empty[j],empty[i]]; }
   const toPlace=Math.min(n, empty.length);
-  for(let i=0;i<toPlace;i++) grid[empty[i][0]][empty[i][1]]=OBS;
+  const placed=[];
+  for(let i=0;i<toPlace;i++){ grid[empty[i][0]][empty[i][1]]=OBS; placed.push([empty[i][0],empty[i][1]]); }
+  return placed;
 }
 
 function canPlace(piece,sr,sc){
@@ -370,11 +1220,33 @@ function placePiece(piece,sr,sc){
       if(piece.shape[r][c]) grid[sr+r][sc+c]=piece.color;
 }
 
-// A line is full if every cell is non-null (normal color OR obstacle)
-function findFullLines(){
+// A line is full if every cell is non-null (normal color OR obstacle).
+// g 參數化（預設真實 grid）：D-2 回放引擎複用同一份純判定邏輯在獨立的 mini grid 上跑，不碰真實 grid。
+function findFullLines(g){
+  g = g || grid;
   const fr=[],fc=[];
-  for(let r=0;r<ROWS;r++) if(grid[r].every(c=>c!==null)) fr.push(r);
-  for(let c=0;c<COLS;c++) if(grid.every(row=>row[c]!==null)) fc.push(c);
+  for(let r=0;r<ROWS;r++) if(g[r].every(c=>c!==null)) fr.push(r);
+  for(let c=0;c<COLS;c++) if(g.every(row=>row[c]!==null)) fc.push(c);
+  return {fr,fc};
+}
+
+// Pure version of findFullLines: 不修改 grid，模擬「若 piece 放在 sr,sc」會消掉哪些行/列（B3 用於 will-clear 預告）
+function simulateFullLines(piece,sr,sc){
+  const added=new Set();
+  for(let r=0;r<piece.shape.length;r++)
+    for(let c=0;c<piece.shape[r].length;c++)
+      if(piece.shape[r][c]) added.add((sr+r)*COLS+(sc+c));
+  const fr=[],fc=[];
+  for(let r=0;r<ROWS;r++){
+    let full=true;
+    for(let c=0;c<COLS;c++){ if(grid[r][c]===null && !added.has(r*COLS+c)){ full=false; break; } }
+    if(full) fr.push(r);
+  }
+  for(let c=0;c<COLS;c++){
+    let full=true;
+    for(let r=0;r<ROWS;r++){ if(grid[r][c]===null && !added.has(r*COLS+c)){ full=false; break; } }
+    if(full) fc.push(c);
+  }
   return {fr,fc};
 }
 
@@ -386,16 +1258,64 @@ function countObsInLines(fr,fc){
   return hit.size;
 }
 
-function eraseLines(fr,fc){
-  fr.forEach(r=>{ for(let c=0;c<COLS;c++) grid[r][c]=null; });
-  fc.forEach(c=>{ for(let r=0;r<ROWS;r++) grid[r][c]=null; });
+// g 參數化（預設真實 grid）：理由同 findFullLines，供 D-2 回放引擎在 mini grid 上複用。
+function eraseLines(fr,fc,g){
+  g = g || grid;
+  fr.forEach(r=>{ for(let c=0;c<COLS;c++) g[r][c]=null; });
+  fc.forEach(c=>{ for(let r=0;r<ROWS;r++) g[r][c]=null; });
 }
 
-function isGameOver(){
-  return pieces.filter(Boolean).every(p=>{
-    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(canPlace(p,r,c)) return false;
-    return true;
+// 給定一組 piece（可含 null），是否至少有一塊在目前棋盤上存在合法放置位
+// （isGameOver 與 A-3 公平生成共用同一份可放置判定）
+function piecesHaveAnyMove(ps){
+  return ps.some(p=>{
+    if(!p) return false;
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(canPlace(p,r,c)) return true;
+    return false;
   });
+}
+function isGameOver(){
+  return !piecesHaveAnyMove(pieces);
+}
+
+// 整組補牌時的公平生成（A-3）：生成後檢查至少一塊有合法落點，否則整組重 roll，上限 20 次；
+// 20 次仍無解就照常發（棋盤真的近滿，讓 game over 自然發生）。不做逐塊保證，保留挑戰性。
+function rollFairPieceSet(){
+  let ps=[randPiece(),randPiece(),randPiece()];
+  let attempts=1;
+  while(!piecesHaveAnyMove(ps) && attempts<20){
+    ps=[randPiece(),randPiece(),randPiece()];
+    attempts++;
+  }
+  return ps;
+}
+
+// 危險預警（B-2）：計算一組 pieces 在全盤的「總落點數」，改造自 piecesHaveAnyMove 的判定邏輯。
+// 只需要知道是否 ≤3，所以可提前截斷（數到 cap 就停），計算量 O(81×3×形狀格數) 本就極小。
+function countTotalMoves(ps, cap){
+  cap = cap==null ? Infinity : cap;
+  let n=0;
+  for(let i=0;i<ps.length;i++){
+    const p=ps[i];
+    if(!p) continue;
+    for(let r=0;r<ROWS;r++){
+      for(let c=0;c<COLS;c++){
+        if(canPlace(p,r,c)){
+          n++;
+          if(n>=cap) return n;
+        }
+      }
+    }
+  }
+  return n;
+}
+const DANGER_MOVE_THRESHOLD = 3;
+// 每次放置/補牌/undo/新局後呼叫：totalMoves ≤ 3 時 board-wrap 加 .danger，解除即移除
+function updateDangerState(){
+  const wrap=document.querySelector('.board-wrap');
+  if(!wrap) return;
+  const totalMoves=countTotalMoves(pieces, DANGER_MOVE_THRESHOLD+1);
+  wrap.classList.toggle('danger', totalMoves<=DANGER_MOVE_THRESHOLD);
 }
 
 /* ══════════════════════════════════════
@@ -426,6 +1346,9 @@ function renderBoard(){
     const el=document.createElement('div');
     const val=grid[r][c];
     let cls='cell';
+    // 3×3 checker（design spec §C.7）：交錯的九宮格底色，幫助玩家一眼辨識 9×9 盤面分區
+    const boxRow=Math.floor(r/3), boxCol=Math.floor(c/3);
+    if((boxRow+boxCol)%2===1) cls+=' cell-alt';
     if(val===OBS){
       cls+=' has-piece obstacle';
     } else if(val){
@@ -437,14 +1360,19 @@ function renderBoard(){
     el.dataset.r=r; el.dataset.c=c;
     board.appendChild(el);
   }
+}
+
+// board 容器本身從不被銷毀重建，事件只需綁一次（A9 / P0-1）
+function initBoardEvents(){
+  const board=document.getElementById('board');
   board.addEventListener('mouseover', onBoardMouseOver);
   board.addEventListener('mouseout',  onBoardMouseOut);
   board.addEventListener('click',     onBoardClick);
 }
 
 function clearPreview(){
-  document.querySelectorAll('#board .cell.preview, #board .cell.invalid-preview').forEach(el=>{
-    el.classList.remove('preview','invalid-preview');
+  document.querySelectorAll('#board .cell.preview, #board .cell.invalid-preview, #board .cell.will-clear').forEach(el=>{
+    el.classList.remove('preview','invalid-preview','will-clear');
     const r=+el.dataset.r,c=+el.dataset.c;
     const val=grid[r][c];
     if(val===OBS){ /* obstacle cells manage their own bg via CSS */ }
@@ -468,6 +1396,19 @@ function showPreview(piece,sr,sc){
         if(valid){ el.classList.add('preview'); el.style.background=piece.color; }
         else     { el.classList.add('invalid-preview'); }
       }
+  // will-clear 預告（B3）：純函式模擬，不改動 grid
+  if(valid){
+    const {fr,fc}=simulateFullLines(piece,sr,sc);
+    if(fr.length||fc.length){
+      const willClearSet=new Set();
+      fr.forEach(r=>{ for(let c=0;c<COLS;c++) willClearSet.add(r*COLS+c); });
+      fc.forEach(c=>{ for(let r=0;r<ROWS;r++) willClearSet.add(r*COLS+c); });
+      willClearSet.forEach(id=>{
+        const el=cellEl(Math.floor(id/COLS), id%COLS);
+        if(el) el.classList.add('will-clear');
+      });
+    }
+  }
 }
 
 function renderPieces(){
@@ -476,13 +1417,25 @@ function renderPieces(){
   pieces.forEach((p,i)=>{
     const slot=document.createElement('div');
     slot.dataset.idx=i;
+    slot.setAttribute('role','button');
     if(!p){
       slot.className='piece-slot empty';
+      slot.setAttribute('aria-label','空格');
+      slot.tabIndex=-1;
     } else {
       slot.className='piece-slot'+(selIdx===i?' selected':'');
+      slot.setAttribute('aria-label','方塊 '+(i+1));
+      slot.tabIndex=0;
       slot.appendChild(makePieceGrid(p,18));
       slot.addEventListener('click', e=>{ e.stopPropagation(); onPieceClick(i); });
       slot.addEventListener('touchstart', e=>{ e.stopPropagation(); onPieceTouchStart(e,i); },{passive:false});
+      // C-3：鍵盤操作，Enter/Space 選取（與滑鼠/觸控路徑分開處理，不受 isTouchDevice() 影響）
+      slot.addEventListener('keydown', e=>{
+        if(e.key==='Enter' || e.key===' ' || e.key==='Spacebar'){
+          e.preventDefault();
+          selectPieceKeyboard(i);
+        }
+      });
     }
     area.appendChild(slot);
   });
@@ -505,10 +1458,21 @@ function updateStats(){
   document.getElementById('level-disp').textContent=level;
   const next=level*100, prev=(level-1)*100;
   const pct=Math.min(100,Math.max(0,((score-prev)/(next-prev))*100));
-  document.getElementById('prog-bar').style.width=pct+'%';
+  document.getElementById('prog-bar').style.transform='scaleX('+(pct/100)+')';
   const needed=Math.max(0,next-score);
   document.getElementById('level-label').textContent=
     needed>0 ? `等級 ${level} — 再得 ${needed} 分升級` : `等級 ${level}！`;
+  updateStreakBadge();
+}
+
+// streak≥2 起顯示「🔥×N」徽記，streak 歸 0 時淡出（B-1）
+function updateStreakBadge(){
+  const el=document.getElementById('streak-badge');
+  if(!el) return;
+  const show = streak>=2;
+  el.textContent = show ? '🔥×'+streak : '';
+  el.classList.toggle('show', show);
+  el.setAttribute('aria-hidden', show ? 'false' : 'true');
 }
 
 // Render the obstacle pip indicators
@@ -541,11 +1505,136 @@ function showScorePop(pts, x, y, isBonus){
   el.addEventListener('animationend',()=>el.remove());
 }
 
+// streak 獎勵分的專屬 pop，文字格式「🔥+N」而非 showScorePop 固定加的 '+' 前綴（B-1）
+function showStreakPop(n, x, y){
+  const el=document.createElement('div');
+  el.className='score-pop bonus';
+  el.textContent='🔥+'+n;
+  el.style.left=x+'px'; el.style.top=y+'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend',()=>el.remove());
+}
+
+// 消行粒子（B-3）：單一格產生最多 3 個碎片，parabola 隨機角度/距離飛散＋淡出，animationend 自刪。
+// budget 由呼叫端控管（單次事件上限 60 粒），回傳實際產生數量供呼叫端扣除。
+function spawnClearParticles(wrap, wrapRect, cellEl, color, budget){
+  if(budget<=0) return 0;
+  const cellRect=cellEl.getBoundingClientRect();
+  const originX=cellRect.left-wrapRect.left+cellRect.width/2;
+  const originY=cellRect.top -wrapRect.top +cellRect.height/2;
+  const n=Math.min(3,budget);
+  for(let i=0;i<n;i++){
+    const size=6+Math.random()*2; // 6-8px
+    const angle=Math.random()*Math.PI*2;
+    const dist=24+Math.random()*28;
+    const dx=Math.cos(angle)*dist;
+    const dy=Math.sin(angle)*dist-10; // 略帶向上的拋物線起勢
+    const dur=(0.5+Math.random()*0.2).toFixed(2); // 0.5-0.7s
+    const frag=document.createElement('div');
+    frag.className='clear-particle';
+    frag.style.width=size+'px';
+    frag.style.height=size+'px';
+    frag.style.left=originX+'px';
+    frag.style.top=originY+'px';
+    frag.style.background=color;
+    frag.style.setProperty('--dx',dx+'px');
+    frag.style.setProperty('--dy',dy+'px');
+    frag.style.animationDuration=dur+'s';
+    frag.addEventListener('animationend',()=>frag.remove());
+    wrap.appendChild(frag);
+  }
+  return n;
+}
+function prefersReducedMotion(){
+  return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+}
+
 function triggerLevelUpFlash(){
   const el=document.getElementById('levelup-flash');
   el.classList.remove('show');
   void el.offsetWidth; // reflow
   el.classList.add('show');
+}
+
+// 一次消 ≥2 行時的 combo 慶祝（B5）
+function showComboPop(total){
+  const board=document.getElementById('board');
+  const br=board.getBoundingClientRect();
+  const x=br.left+br.width/2, y=br.top+br.height/2;
+  const labels={2:'DOUBLE!',3:'TRIPLE!',4:'QUAD!'};
+  const text=labels[total] || (total+' LINES!');
+  const el=document.createElement('div');
+  el.className='combo-pop';
+  el.textContent=text;
+  el.style.left=x+'px'; el.style.top=y+'px';
+  document.body.appendChild(el);
+  el.addEventListener('animationend',()=>el.remove());
+  const wrap=document.querySelector('.board-wrap');
+  if(wrap){
+    wrap.classList.remove('combo-pulse');
+    void wrap.offsetWidth; // reflow
+    wrap.classList.add('combo-pulse');
+    // B-2 修正：combo-pulse 若滯留不移除，其 `animation` 屬性會因同權重＋較晚宣告而永久蓋掉
+    // .board-wrap.danger 的 dangerPulse（兩者共用同一個 board-wrap 元素）。動畫播完即自行移除，
+    // 讓 danger 呼吸動畫在下一次 updateDangerState() 後能正常生效。
+    wrap.addEventListener('animationend', function onEnd(e){
+      if(e.animationName==='comboPulse'){ wrap.classList.remove('combo-pulse'); wrap.removeEventListener('animationend', onEnd); }
+    });
+  }
+}
+
+// 放置失敗回饋：短暫 shake + 紅光（B2）
+function flashInvalidCells(piece,sr,sc){
+  if(!piece) return;
+  sfxInvalid();
+  announce('此位置無法放置');
+  const cells=[];
+  for(let r=0;r<piece.shape.length;r++)
+    for(let c=0;c<piece.shape[r].length;c++)
+      if(piece.shape[r][c]){
+        const gr=sr+r,gc=sc+c;
+        if(gr<0||gr>=ROWS||gc<0||gc>=COLS) continue;
+        const el=cellEl(gr,gc);
+        if(el) cells.push(el);
+      }
+  cells.forEach(el=>{
+    el.classList.remove('invalid-flash');
+    void el.offsetWidth; // reflow，允許重複觸發
+    el.classList.add('invalid-flash');
+    el.addEventListener('animationend', ()=>el.classList.remove('invalid-flash'), {once:true});
+  });
+  navigator.vibrate?.(50);
+}
+
+// 觸控放置失敗：ghost 彈回原本的 piece-slot 再隱藏（B2）
+function bounceGhostBack(idx){
+  sfxInvalid();
+  const g=document.getElementById('ghost');
+  const slot=document.querySelector(`.piece-slot[data-idx="${idx}"]`);
+  if(!slot){ hideGhost(); return; }
+  const r=slot.getBoundingClientRect();
+  const tx=r.left+r.width/2, ty=r.top+r.height/2;
+  g.style.transition='left 0.28s ease, top 0.28s ease, opacity 0.28s ease';
+  g.style.left=tx+'px';
+  g.style.top=ty+'px';
+  g.style.opacity='0';
+  setTimeout(()=>{
+    g.style.transition='';
+    g.style.display='none';
+    g.style.opacity='0.85';
+    g.style.transform='translate(-50%,-50%)';
+  },300);
+  navigator.vibrate?.(50);
+}
+
+// 遊戲中首次超越最高分時顯示一次性 toast（B15）
+function showRecordToast(){
+  sfxRecord();
+  const el=document.createElement('div');
+  el.className='record-toast';
+  el.textContent='🏆 新紀錄！';
+  document.body.appendChild(el);
+  el.addEventListener('animationend',()=>el.remove());
 }
 
 /* ══════════════════════════════════════
@@ -590,11 +1679,14 @@ function onBoardClick(e){
   if(selIdx===null||isTouchDevice()) return;
   const el=e.target.closest?e.target.closest('.cell'):null;
   if(!el) return;
-  const placed=doPlace(selIdx,+el.dataset.r,+el.dataset.c);
+  const sr=+el.dataset.r, sc=+el.dataset.c;
+  const placed=doPlace(selIdx,sr,sc);
   if(placed){
     selIdx=null; hideGhost();
     document.querySelectorAll('#board .cell').forEach(c=>c.classList.remove('can-select'));
     setHint('點擊下方方塊來選取', false);
+  } else {
+    flashInvalidCells(pieces[selIdx],sr,sc);
   }
 }
 
@@ -605,11 +1697,63 @@ document.addEventListener('mousemove', e=>{
   g.style.left=e.clientX+'px'; g.style.top=e.clientY+'px';
 });
 
-document.addEventListener('keydown', e=>{ if(e.key==='Escape') deselect(); });
+document.addEventListener('keydown', e=>{
+  if(e.key!=='Escape') return;
+  const overlay=document.getElementById('stats-overlay');
+  if(overlay && overlay.classList.contains('show')){ closeStatsOverlay(); return; }
+  deselect();
+});
 document.addEventListener('click', e=>{
   if(selIdx===null||isTouchDevice()) return;
   if(!e.target.closest('#board')&&!e.target.closest('.pieces-area')) deselect();
 });
+
+/* ══════════════════════════════════════
+   鍵盤操作與無障礙（C-3）
+   Tab 聚焦 piece-slot（Enter/Space 選取，見 renderPieces）→ 方向鍵在棋盤上移動預覽游標
+   （沿用既有 showPreview/previewPos）→ Enter 放置 → Esc 取消（沿用既有 deselect）。
+   選取後把 DOM focus 移到 #board（tabindex="-1"，不進入一般 Tab 順序，只能經由選取進入），
+   讓後續方向鍵/Enter 由 board 自己的 keydown 監聽處理，避免跟 piece-slot 的 Enter 監聽衝突
+   （否則第一次 Enter 選取的同一個事件會冒泡到 board 層被誤判成「立刻放置」）。
+══════════════════════════════════════ */
+function selectPieceKeyboard(i){
+  if(!pieces[i]) return;
+  if(selIdx===i){ deselect(); return; }
+  selIdx=i; clearPreview(); renderPieces();
+  document.querySelectorAll('#board .cell').forEach(el=>el.classList.add('can-select'));
+  showPreview(pieces[i], 4, 4); // 預覽游標初始位置 (4,4)
+  setHint('方向鍵移動，Enter 放置　ESC 取消', true);
+  document.getElementById('board').focus({preventScroll:true});
+}
+document.getElementById('board').addEventListener('keydown', e=>{
+  if(selIdx===null) return;
+  const piece=pieces[selIdx];
+  if(!piece) return;
+  const cur = previewPos || {r:4,c:4};
+  if(e.key==='ArrowUp'){ e.preventDefault(); showPreview(piece, Math.max(0,cur.r-1), cur.c); }
+  else if(e.key==='ArrowDown'){ e.preventDefault(); showPreview(piece, Math.min(ROWS-1,cur.r+1), cur.c); }
+  else if(e.key==='ArrowLeft'){ e.preventDefault(); showPreview(piece, cur.r, Math.max(0,cur.c-1)); }
+  else if(e.key==='ArrowRight'){ e.preventDefault(); showPreview(piece, cur.r, Math.min(COLS-1,cur.c+1)); }
+  else if(e.key==='Enter' || e.key===' ' || e.key==='Spacebar'){
+    e.preventDefault();
+    const placed=doPlace(selIdx, cur.r, cur.c);
+    if(placed){
+      selIdx=null; hideGhost();
+      document.querySelectorAll('#board .cell').forEach(c2=>c2.classList.remove('can-select'));
+      setHint(isTouchDevice()?'長按方塊開始拖動':'點擊下方方塊來選取', false);
+    } else {
+      flashInvalidCells(piece, cur.r, cur.c);
+    }
+  }
+});
+
+// 螢幕報讀播報區（C-3）：aria-live="polite"，先清空再寫入以確保同段文字重複出現時仍會被播報
+function announce(msg){
+  const el=document.getElementById('aria-announcer');
+  if(!el) return;
+  el.textContent='';
+  setTimeout(()=>{ el.textContent=msg; }, 30);
+}
 
 /* ══════════════════════════════════════
    TOUCH DRAG（移動端）
@@ -624,31 +1768,37 @@ let touchDragIdx = null;          // 正在拖動的 piece index
 let touchEndIdx = null;           // touchend 時確認的 index（避免閉包問題）
 let touchDragActive = false;      // 是否已開始移動（區別 tap vs drag）
 let touchStartX = 0, touchStartY = 0;
+let dragTouchId = null;           // 正在拖動的 Touch.identifier（A5：避免多指觸控互相干擾）
 const DRAG_THRESHOLD = 6;         // px，超過才視為拖動
 
-// 計算 ghost 顯示位置（手指上方，讓格子可見）
-function ghostOffsetY(piece){
-  const rows = piece.shape.length;
-  const cellSz = 26; // ghost cell size
-  return -(rows * (cellSz + 2)) - 20; // ghost 高度 + 間距
+// 從 TouchList 中找出符合 identifier 的觸點，找不到回傳 null（A5）
+function findTouchById(touchList, id){
+  if(id===null) return null;
+  for(let i=0;i<touchList.length;i++) if(touchList[i].identifier===id) return touchList[i];
+  return null;
 }
 
-function moveTouchGhost(piece, cx, cy){
+// A-4：ghost 視覺位置與落點判定座標須「一致地」固定上移 70px（僅 touch 路徑；桌面滑鼠 hover 不上移）
+const TOUCH_GHOST_LIFT = 70;
+function liftedTouchPoint(cx, cy){
+  return { x: cx, y: cy - TOUCH_GHOST_LIFT };
+}
+
+function moveTouchGhost(cx, cy){
   const g = document.getElementById('ghost');
-  // X 置中，Y 在手指上方
-  g.style.left = cx + 'px';
-  g.style.top  = (cy + ghostOffsetY(piece)) + 'px';
-  g.style.transform = 'translate(-50%, 0)';
+  const p = liftedTouchPoint(cx, cy);
+  g.style.left = p.x + 'px';
+  g.style.top  = p.y + 'px';
   g.style.display = 'block';
 }
 
-// 從觸控座標取得 board cell（排除 ghost 遮擋）
+// 從觸控座標取得 board cell（排除 ghost 遮擋）；用與 ghost 視覺相同的上移座標判定（A-4 驗收重點：視覺＝判定）
 function cellFromTouch(cx, cy){
-  // 暫時隱藏 ghost 讓 elementFromPoint 穿透
+  const p = liftedTouchPoint(cx, cy);
   const g = document.getElementById('ghost');
   const prev = g.style.display;
   g.style.display = 'none';
-  const el = document.elementFromPoint(cx, cy);
+  const el = document.elementFromPoint(p.x, p.y);
   g.style.display = prev;
   if(!el) return null;
   return el.closest ? el.closest('.cell') : null;
@@ -656,19 +1806,27 @@ function cellFromTouch(cx, cy){
 
 // piece-slot 的 touchstart
 function onPieceTouchStart(e, i){
+  if(touchDragIdx !== null) return; // 已有拖曳進行中，忽略其他觸點（A5）
   if(!pieces[i]) return;
   e.preventDefault();
   touchDragIdx = i;
   touchEndIdx = i;
   touchDragActive = false;
-  const t = e.touches[0];
+  const t = e.changedTouches[0];
+  dragTouchId = t.identifier;
   touchStartX = t.clientX;
   touchStartY = t.clientY;
 
   // 立刻更新 ghost 但先不顯示（等移動一點才顯示，避免誤觸）
   updateGhost(pieces[i]);
-  moveTouchGhost(pieces[i], t.clientX, t.clientY);
-  document.getElementById('ghost').style.opacity = '0'; // 先透明
+  const g0 = document.getElementById('ghost');
+  g0.style.transition = 'none';
+  g0.style.left = t.clientX + 'px';
+  g0.style.top  = t.clientY + 'px';
+  g0.style.opacity = '0'; // 先透明
+  void g0.offsetWidth; // reflow：確保上面「無 transition」的起手位先套用
+  g0.style.transition = 'left 0.15s ease, top 0.15s ease';
+  moveTouchGhost(t.clientX, t.clientY); // 起手就上移到判定座標，配 transition 滑動避免跳動（A-4）
 
   // 標記 slot
   const slot = document.querySelector(`.piece-slot[data-idx="${i}"]`);
@@ -677,15 +1835,18 @@ function onPieceTouchStart(e, i){
 
 document.addEventListener('touchmove', e=>{
   if(touchDragIdx === null) return;
+  const t = findTouchById(e.touches, dragTouchId);
+  if(!t) return; // 不是正在拖曳的手指，忽略（A5）
   e.preventDefault();
 
-  const t = e.touches[0];
   const dx = t.clientX - touchStartX;
   const dy = t.clientY - touchStartY;
 
   if(!touchDragActive && Math.sqrt(dx*dx+dy*dy) > DRAG_THRESHOLD){
     touchDragActive = true;
-    document.getElementById('ghost').style.opacity = '0.85';
+    const g = document.getElementById('ghost');
+    g.style.transition = ''; // 拖曳開始後移除 transition，讓 ghost 即時跟手
+    g.style.opacity = '0.85';
     // 把所有 cell 標記可放置（視覺提示）
     document.querySelectorAll('#board .cell').forEach(el=>el.classList.add('can-select'));
     setHint('放開手指以放置方塊', true);
@@ -694,9 +1855,9 @@ document.addEventListener('touchmove', e=>{
   if(!touchDragActive) return;
 
   const piece = pieces[touchDragIdx];
-  moveTouchGhost(piece, t.clientX, t.clientY);
+  moveTouchGhost(t.clientX, t.clientY);
 
-  // 預覽落點（用手指真實位置，ghost 在上方，下方即目標格子）
+  // 預覽落點：用與 ghost 視覺相同的上移座標判定，視覺＝判定（A-4）
   const cell = cellFromTouch(t.clientX, t.clientY);
   if(cell){
     showPreview(piece, +cell.dataset.r, +cell.dataset.c);
@@ -707,28 +1868,37 @@ document.addEventListener('touchmove', e=>{
 
 document.addEventListener('touchend', e=>{
   if(touchDragIdx === null) return;
+  const t = findTouchById(e.changedTouches, dragTouchId);
+  if(!t) return; // 不是正在拖曳的手指，忽略（A5），繼續等待正確手指放開
   e.preventDefault();
 
-  const t = e.changedTouches[0];
-  const piece = pieces[touchDragIdx];
   const wasDrag = touchDragActive;
+  const draggedIdx = touchEndIdx;
 
-  // 清理視覺狀態
-  hideGhost();
+  // 清理視覺狀態（ghost 依放置成功與否分開處理，見下）
   clearPreview();
-  document.getElementById('ghost').style.transform = 'translate(-50%,-50%)'; // 恢復預設
   document.querySelectorAll('#board .cell').forEach(el=>el.classList.remove('can-select'));
   document.querySelectorAll('.piece-slot.selected').forEach(el=>el.classList.remove('selected'));
   touchDragIdx = null;
   touchDragActive = false;
+  dragTouchId = null;
 
   if(wasDrag){
     // 拖動模式：在放開位置放置
     const cell = cellFromTouch(t.clientX, t.clientY);
-    if(cell) doPlace(touchEndIdx, +cell.dataset.r, +cell.dataset.c);
+    const placed = cell ? doPlace(draggedIdx, +cell.dataset.r, +cell.dataset.c) : false;
+    if(placed){
+      hideGhost();
+      document.getElementById('ghost').style.transform = 'translate(-50%,-50%)';
+    } else {
+      // 放置失敗：ghost 彈回原本的 piece-slot 再隱藏（B2）
+      bounceGhostBack(draggedIdx);
+    }
     selIdx = null;
     setHint('長按方塊開始拖動', false);
   } else {
+    hideGhost();
+    document.getElementById('ghost').style.transform = 'translate(-50%,-50%)'; // 恢復預設
     // 輕點：切換選取（tap-to-select，再 tap cell 放置）
     const slot = document.elementFromPoint(t.clientX, t.clientY);
     if(slot){
@@ -752,16 +1922,39 @@ document.addEventListener('touchend', e=>{
       if(selIdx !== null){
         const cell = slot.closest ? slot.closest('.cell') : null;
         if(cell){
-          const placed = doPlace(selIdx, +cell.dataset.r, +cell.dataset.c);
+          const sr=+cell.dataset.r, sc=+cell.dataset.c;
+          const placed = doPlace(selIdx, sr, sc);
           if(placed){
             selIdx = null; hideGhost();
             document.querySelectorAll('#board .cell').forEach(c=>c.classList.remove('can-select'));
             setHint('長按方塊開始拖動', false);
+          } else {
+            flashInvalidCells(pieces[selIdx], sr, sc);
           }
         }
       }
     }
   }
+},{passive:false});
+
+// 拖曳被系統中斷（來電、下拉通知、邊緣返回手勢等）只會收到 touchcancel，不會有 touchend
+// 一律清理視覺狀態，絕不呼叫 doPlace（A4）
+document.addEventListener('touchcancel', e=>{
+  if(touchDragIdx === null) return;
+  const t = findTouchById(e.changedTouches, dragTouchId);
+  if(!t) return; // 不是正在拖曳的手指，忽略（A5）
+
+  hideGhost();
+  clearPreview();
+  document.getElementById('ghost').style.transition = '';
+  document.getElementById('ghost').style.transform = 'translate(-50%,-50%)';
+  document.querySelectorAll('#board .cell').forEach(el=>el.classList.remove('can-select'));
+  document.querySelectorAll('.piece-slot.selected').forEach(el=>el.classList.remove('selected'));
+  touchDragIdx = null;
+  touchDragActive = false;
+  dragTouchId = null;
+  selIdx = null;
+  setHint(isTouchDevice()?'長按方塊開始拖動':'點擊下方方塊來選取', false);
 },{passive:false});
 
 // ghost 的 touchmove 不需要重複，已在 document 層處理
@@ -773,6 +1966,15 @@ function doPlace(idx,sr,sc){
   const piece=pieces[idx];
   if(!piece||!canPlace(piece,sr,sc)) return false;
 
+  // A-2：成功放置前先拍快照（單層 undo），下方任何 grid/pieces/score/level 變動都在此之後
+  takeUndoSnapshot();
+
+  // 記錄本次放置涉及的座標（用於落地動畫，B4）
+  const placedCoords=[];
+  for(let r=0;r<piece.shape.length;r++)
+    for(let c=0;c<piece.shape[r].length;c++)
+      if(piece.shape[r][c]) placedCoords.push([sr+r,sc+c]);
+
   placePiece(piece,sr,sc);
   pieces[idx]=null;
   clearPreview();
@@ -780,26 +1982,62 @@ function doPlace(idx,sr,sc){
   const {fr,fc}=findFullLines();
   const total=fr.length+fc.length;
 
-  // Count obstacle cells caught in cleared lines (before erasing)
+  // 成就：首次消行／單次雙消／單次三消（C-2），時機只需 total 確定即可判定
+  if(total>0) unlockAchievement('first_clear');
+  if(total>=2) unlockAchievement('double_clear');
+  if(total>=3) unlockAchievement('triple_clear');
+
+  // Count obstacle cells caught in cleared lines（必須在 eraseLines 之前計算）
   const obsCleared = total>0 ? countObsInLines(fr,fc) : 0;
 
-  // Collect cells to animate
+  const clearedSet=new Set();
   if(total>0){
+    // 先重繪棋盤：讓新放置的方塊、以及尚未清除的整行/列都先顯示出來，
+    // 才能把即將消除的格子加上動畫 class；隨後立即同步清除 grid 資料（A1）。
+    renderBoard();
     const toAnim=new Set();
     fr.forEach(r=>{ for(let c=0;c<COLS;c++) toAnim.add(r*COLS+c); });
     fc.forEach(c=>{ for(let r=0;r<ROWS;r++) toAnim.add(r*COLS+c); });
     const cells=document.querySelectorAll('#board .cell');
+    // 消行粒子（B-3）：單次事件上限 60 粒，reduced-motion 時完全不產生
+    let particleBudget = prefersReducedMotion() ? 0 : 60;
+    const pWrap = particleBudget>0 ? document.querySelector('.board-wrap') : null;
+    const pWrapRect = pWrap ? pWrap.getBoundingClientRect() : null;
     toAnim.forEach(idx2=>{
+      clearedSet.add(idx2);
       const el=cells[idx2]; if(!el) return;
       // Obstacle cells get a special flashier animation
-      const r2=+el.dataset.r, c2=+el.dataset.c;
-      if(grid[r2][c2]===OBS) el.classList.add('obs-clearing');
-      else                   el.classList.add('clearing');
+      const r2=Math.floor(idx2/COLS), c2=idx2%COLS;
+      const cellVal=grid[r2][c2];
+      if(cellVal===OBS) el.classList.add('obs-clearing');
+      else               el.classList.add('clearing');
+      if(pWrap && particleBudget>0){
+        const color = cellVal===OBS ? 'var(--obstacle-fg)' : cellVal;
+        particleBudget -= spawnClearParticles(pWrap, pWrapRect, el, color, particleBudget);
+      }
     });
-    setTimeout(()=>{ eraseLines(fr,fc); renderBoard(); renderObsPips(); postPlace(idx,sr,sc,obsCleared); },400);
-  } else {
-    renderBoard();
-    postPlace(idx,sr,sc,obsCleared);
+    // 資料同步清除：grid 立即更新，避免 400ms 視窗內重複計分或存檔不一致（A1）
+    eraseLines(fr,fc);
+
+    // 統計：累計消行數／單次最高消行（C-1）
+    stats.totalLines += total;
+    if(total > stats.maxCombo) stats.maxCombo = total;
+    gameLines += total; // D-1：本局累計消行數，供 game over 時寫入歷史紀錄
+
+    // 成就：清空全盤（C-2）。判定時機必須在資料同步清除之後、且在下方升級可能生成新障礙物之前，
+    // 否則升級補的障礙物會讓「全空」誤判為未達成。
+    if(grid.every(row=>row.every(v=>v===null))) unlockAchievement('clear_board');
+
+    // 落地動畫：只套用在「不會被立刻消除」的格子上，避免與 clearing 動畫衝突（B4）
+    placedCoords.forEach(([r,c])=>{
+      const flatIdx=r*COLS+c;
+      if(clearedSet.has(flatIdx)) return;
+      const el=cells[flatIdx];
+      if(el){
+        el.classList.add('place-pop');
+        el.addEventListener('animationend', ()=>el.classList.remove('place-pop'), {once:true});
+      }
+    });
   }
 
   // ── Scoring ──
@@ -809,19 +2047,77 @@ function doPlace(idx,sr,sc){
   const pts        = cellCount + lineBonus + obsBonus;
   score += pts;
 
-  // ── Level-up check ──
-  const oldLevel = level;
+  // ── Streak（B-1）：有消行才累加，斷檔（本次無消行）歸零；streak≥2 起在消行分之後加獎勵分 ──
+  if(total>0) streak++; else streak=0;
+  const streakBonus = (total>0 && streak>=2) ? streak*5 : 0;
+  if(streakBonus>0) score += streakBonus;
+
+  // 統計／成就：最高連續 streak（C-1）／streak×5 成就（C-2）
+  if(streak > stats.maxStreak) stats.maxStreak = streak;
+  if(streak >= 5) unlockAchievement('streak5');
+  if(streak > gameMaxStreak) gameMaxStreak = streak; // D-1：本局最高 streak，供 game over 時寫入歷史紀錄
+
+  // 成就：單局分數門檻（C-2），score 此時已含本次 pts 與 streakBonus
+  if(score >= 500)  unlockAchievement('score500');
+  if(score >= 1000) unlockAchievement('score1000');
+
+  // ── Level-up check：務必在「非動畫分支的 renderBoard」／postPlace()／isGameOver() 之前生成障礙物（A2）──
   const nl = Math.floor(score/100)+1;
+  let newObsCoords = []; // D-2：本次放置若升級生成障礙物，座標要記進這步的 move.obs，回放才能重現
   if(nl > level){
     level = nl;
     triggerLevelUpFlash();
+    sfxLevelUp();
     // Spawn new obstacles for the new level (fill up to target count)
     const target = obsCount(level);
     const current = countObstacles();
-    if(target > current) spawnObstacles(target - current);
+    if(target > current) newObsCoords = spawnObstacles(target - current);
+  }
+  // 成就：等級 5（C-2）。不限定「剛好升到」，重載後若已達等級 5 也該補判（累積型成就）
+  if(level >= 5) unlockAchievement('level5');
+
+  // D-2：回放記錄 — 上限 500 步，超過停止記錄該局回放（歷史仍記分數與 final grid，見 recordHistoryEntry）。
+  // d/c 用 index 引用 PIECE_DEFS/COLORS，不存整個形狀陣列；s 存放置後的累計分數（回放直接顯示，不重算）。
+  if(moves.length < MOVES_CAP){
+    const d = findPieceDefIndex(piece.shape);
+    const cIdx = COLORS.indexOf(piece.color);
+    if(d>=0 && cIdx>=0){
+      moves.push({d, c:cIdx, r:sr, col:sc, obs:newObsCoords, s:score});
+    }
   }
 
-  updateStats(); saveProg(); renderObsPips();
+  if(total===0){
+    // 沒有消行：grid 資料（含新放置的方塊、可能新生成的障礙物）此時已定案，直接重繪一次即可，
+    // 障礙物不會被 400ms 動畫窗口延遲顯示。
+    renderBoard();
+    placedCoords.forEach(([r,c])=>{
+      const el=cellEl(r,c);
+      if(el){
+        el.classList.add('place-pop');
+        el.addEventListener('animationend', ()=>el.classList.remove('place-pop'), {once:true});
+      }
+    });
+  }
+
+  renderObsPips();
+
+  // ── 補牌／game-over 判定：grid 資料（含新障礙物）此時已完全就緒（A2）──
+  postPlace();
+
+  const oldBest = best; // 記錄 updateStats() 覆寫 best 之前的舊值，供 B15 判斷是否剛破紀錄
+  updateStats();
+  saveProg();
+  saveStats(); // C-1：totalLines/maxCombo/maxStreak 這幾格上面已就緒，這裡統一存檔
+
+  // 螢幕報讀：播報本次放置結果（C-3）
+  announce(total>0 ? `消除 ${total} 行，得 ${pts} 分` : `放置成功，得 ${pts} 分`);
+
+  // 一次消 ≥2 行的 combo 慶祝（B5）
+  if(total>=2) showComboPop(total);
+
+  // 觸覺回饋（B14）
+  if(total>0) navigator.vibrate?.([15,30,15]);
+  else        navigator.vibrate?.(10);
 
   // Score pop — show obstacle bonus separately if any
   const br=document.getElementById('board').getBoundingClientRect();
@@ -832,22 +2128,58 @@ function doPlace(idx,sr,sc){
   } else {
     showScorePop(pts, popX, popY, false);
   }
+  // streak 獎勵分另外顯示「🔥+N」，避開 obsBonus pop 的位置與時序（B-1）
+  if(streakBonus>0){
+    const streakDelay = obsBonus>0 ? 240 : 120;
+    const streakY = obsBonus>0 ? popY+60 : popY+30;
+    setTimeout(()=>showStreakPop(streakBonus, popX-10, streakY), streakDelay);
+  }
+
+  // 首次超越最高分的一次性 toast（B15）
+  if(!recordToastShown && oldBest>0 && score>oldBest){
+    recordToastShown=true;
+    showRecordToast();
+  }
+
+  // 放置音效（A-1）：有消行播消行音（依 total 音高上揚），否則播放置成功音
+  if(total>0) sfxClear(total); else sfxPlace();
+  // streak≥2 起的加成音，音高隨 streak 遞增（B-1）
+  if(streakBonus>0) sfxStreak(streak);
+
+  // 450ms 後只負責重繪棋盤（配合 obsFlash 0.45s），不可再動 grid 資料（A1/A8）
+  if(total>0){
+    pendingClearTimer = setTimeout(()=>{ renderBoard(); pendingClearTimer=null; },450);
+  }
 
   return true;
 }
 
-function postPlace(idx, sr, sc, obsCleared){
-  if(pieces.every(p=>!p)) pieces=[randPiece(),randPiece(),randPiece()];
+function postPlace(){
+  if(pieces.every(p=>!p)) pieces=rollFairPieceSet();
   renderPieces();
+  updateDangerState(); // B-2：每次放置/補牌後重算 totalMoves
   if(isGameOver()) showGameOver();
 }
 
-function showGameOver(){
+function showGameOver(fromResume){
   saveProg();
+  sfxGameOver();
   document.getElementById('final-score').textContent=score;
-  document.getElementById('final-record').textContent=(score>0&&score>=best)?'🎉 新紀錄！':'';
+  const recordEl=document.getElementById('final-record');
+  const isRecord=score>0&&score>=best;
+  recordEl.textContent=isRecord?'🎉 新紀錄！':'';
+  recordEl.style.display=isRecord?'':'none';
   document.getElementById('final-best-label').textContent=`最高分: ${best}`;
   document.getElementById('game-over-overlay').classList.add('show');
+  navigator.vibrate?.(80);
+  // 統計：games/totalScore 只在「真正剛結束」時累計一次；resumeOrNew() 讀到已死局面補畫面時
+  // 傳 fromResume=true 跳過計數，避免同一局在每次重整頁面時被重複計入（C-1）
+  if(!fromResume){
+    stats.games += 1;
+    stats.totalScore += score;
+    saveStats();
+    recordHistoryEntry(); // D-1：同一個 fromResume guard，避免 resume 重整補畫面時重複寫入歷史
+  }
 }
 
 /* ══════════════════════════════════════
@@ -855,33 +2187,420 @@ function showGameOver(){
 ══════════════════════════════════════ */
 function newGame(){
   loadBest(); clearState();
-  grid=emptyGrid(); score=0; level=1;
+  if(pendingClearTimer){ clearTimeout(pendingClearTimer); pendingClearTimer=null; } // A-2：新局清空 pending 重繪
+  grid=emptyGrid(); score=0; level=1; streak=0; // B-1：新局 streak 歸零
   pieces=[randPiece(),randPiece(),randPiece()];
   selIdx=null;
+  recordToastShown=false; // B15：新局重新允許顯示一次新紀錄 toast
+  resetUndo(); // A-2：新局清空 undo 快照
+  // D-2：新局重置回放記錄，開局另存 initialGrid 快照
+  moves=[]; gameLines=0; gameMaxStreak=0;
+  initialGrid=deepCloneGrid(grid);
   document.getElementById('game-over-overlay').classList.remove('show');
-  hideGhost(); renderBoard(); renderPieces(); updateStats(); renderObsPips();
+  hideGhost(); renderBoard(); renderPieces(); updateStats(); renderObsPips(); updateDangerState();
   setHint(isTouchDevice()?'長按方塊開始拖動，或點一下選取':'點擊下方方塊來選取',false);
 }
 
 function resumeOrNew(){
   loadBest();
   if(loadState()){
-    renderBoard(); renderPieces(); updateStats(); renderObsPips();
+    // 已經達到/超過 best 的存檔視為「這次破紀錄時刻已過」，避免重載後重複跳 toast
+    recordToastShown = score>=best;
+    resetUndo(); // A-2：重載後沒有快照，不可 undo
+    renderBoard(); renderPieces(); updateStats(); renderObsPips(); updateDangerState();
     setHint(isTouchDevice()?'長按方塊開始拖動，或點一下選取':'點擊下方方塊來選取',false);
+    if(isGameOver()) showGameOver(true); // A3：讀檔後若其實已是死局，補上結算畫面；C-1：resume 不重複計入 stats
   } else {
     newGame();
   }
 }
 
-document.getElementById('new-game-btn').addEventListener('click', newGame);
+document.getElementById('new-game-btn').addEventListener('click', ()=>{ sfxClick(); newGame(); });
 document.getElementById('retry-btn').addEventListener('click', ()=>{
+  sfxClick();
   document.getElementById('game-over-overlay').classList.remove('show');
   newGame();
 });
+document.getElementById('undo-btn').addEventListener('click', doUndo);
+
+/* ══════════════════════════════════════
+   統計／成就 overlay（C-1/C-2）
+   tab 機制刻意寫成通用：每個 tab 按鈕帶 data-tab，對應面板帶 data-tab-panel，
+   點擊時用同一份邏輯切換 active/aria-selected/hidden。Wave D 之後只需在 HTML
+   多加一個 data-tab="history" 按鈕＋對應面板，這裡的 initInfoTabs() 完全不用改。
+══════════════════════════════════════ */
+function initInfoTabs(container){
+  const tabs = container.querySelectorAll('.info-tab');
+  tabs.forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      sfxClick();
+      stopReplayPlaying(); // D-2：切換 tab 時停止背景播放計時器（不影響回放子面板本身的顯示/隱藏狀態）
+      const target = btn.dataset.tab;
+      container.querySelectorAll('.info-tab').forEach(b=>{
+        const active = b===btn;
+        b.classList.toggle('active', active);
+        b.setAttribute('aria-selected', active?'true':'false');
+      });
+      container.querySelectorAll('.info-tab-panel').forEach(p=>{
+        const active = p.dataset.tabPanel===target;
+        p.classList.toggle('active', active);
+        p.hidden = !active;
+      });
+    });
+  });
+}
+function renderStatsPanel(){
+  const panel=document.getElementById('tab-panel-stats');
+  if(!panel) return;
+  const rows=[
+    ['最高分', best],
+    ['總局數', stats.games],
+    ['累計分數', stats.totalScore],
+    ['累計消行', stats.totalLines],
+    ['單次最高消行', stats.maxCombo],
+    ['最高連續 Streak', stats.maxStreak],
+  ];
+  panel.innerHTML = '<div class="stats-list">' + rows.map(([label,value])=>
+    `<div class="stats-list-row"><span class="stats-list-label">${label}</span><span class="stats-list-value">${value}</span></div>`
+  ).join('') + '</div>';
+}
+function renderAchievementsPanel(){
+  const panel=document.getElementById('tab-panel-ach');
+  if(!panel) return;
+  panel.innerHTML = '<div class="ach-grid">' + ACHIEVEMENTS.map(a=>{
+    const unlocked = achieved.has(a.id);
+    return `<div class="ach-card${unlocked?'':' locked'}"><span class="ach-icon">${unlocked?'🏅':'🔒'}</span><span class="ach-label">${a.label}</span></div>`;
+  }).join('') + '</div>';
+}
+function openStatsOverlay(){
+  renderStatsPanel();
+  renderAchievementsPanel();
+  renderHistoryPanel(); // D-1
+  // D-2：每次打開都重置回歷史清單檢視，避免殘留上次工作階段的回放子面板狀態
+  document.getElementById('history-list-view').hidden=false;
+  document.getElementById('history-replay-view').hidden=true;
+  document.getElementById('stats-overlay').classList.add('show');
+}
+function closeStatsOverlay(){
+  document.getElementById('stats-overlay').classList.remove('show');
+  closeReplay(); // D-2：關閉整個 overlay 時一併清理回放狀態（停止計時器＋收回子面板），避免背景殘留
+}
+function initStatsOverlay(){
+  const overlay=document.getElementById('stats-overlay');
+  if(!overlay) return;
+  initInfoTabs(overlay);
+  document.getElementById('stats-btn').addEventListener('click', ()=>{ sfxClick(); openStatsOverlay(); });
+  document.getElementById('stats-close-btn').addEventListener('click', ()=>{ sfxClick(); closeStatsOverlay(); });
+  overlay.addEventListener('click', e=>{ if(e.target===overlay) closeStatsOverlay(); });
+  initHistoryPanel(); // D-1/D-2
+}
+
+/* ══════════════════════════════════════
+   歷史清單 UI（D-1）
+══════════════════════════════════════ */
+function formatHistoryDate(ts){
+  const d = new Date(ts);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+function renderHistoryThumb(finalGridStr){
+  let html = '<div class="history-thumb">';
+  for(let i=0;i<ROWS*COLS;i++){
+    const val = decodeGridCell(finalGridStr[i]);
+    let bg = 'transparent';
+    if(val===OBS) bg='var(--obstacle-fg)';
+    else if(val) bg=val;
+    html += `<div class="history-thumb-cell" style="background:${bg}"></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+function renderHistoryPanel(){
+  const listEl=document.getElementById('history-list');
+  if(!listEl) return;
+  if(history.length===0){
+    listEl.innerHTML = '<div class="history-empty">尚無紀錄</div>';
+    return;
+  }
+  listEl.innerHTML = history.map((entry,i)=>{
+    const replayDisabled = !entry.moves;
+    return `<div class="history-card">
+      ${renderHistoryThumb(entry.finalGrid)}
+      <div class="history-card-info">
+        <div class="history-card-date">${formatHistoryDate(entry.ts)}</div>
+        <div class="history-card-stats">分數 ${entry.score}　等級 ${entry.level}　消行 ${entry.lines}</div>
+      </div>
+      <button class="btn history-replay-btn" type="button" data-replay-idx="${i}"${replayDisabled?' disabled':''}>${replayDisabled?'局過長，無回放':'回放'}</button>
+    </div>`;
+  }).join('');
+}
+function initHistoryPanel(){
+  const listEl=document.getElementById('history-list');
+  if(!listEl) return;
+  listEl.addEventListener('click', e=>{
+    const btn = e.target.closest('[data-replay-idx]');
+    if(!btn || btn.disabled) return;
+    sfxClick();
+    openReplay(+btn.dataset.replayIdx);
+  });
+  document.getElementById('history-clear-btn').addEventListener('click', ()=>{
+    sfxClick();
+    if(confirm('確定要清除所有歷史紀錄嗎？')){
+      history=[];
+      saveHistory();
+      renderHistoryPanel();
+    }
+  });
+  document.getElementById('replay-prev-btn').addEventListener('click', ()=>{ sfxClick(); replayPrev(); });
+  document.getElementById('replay-next-btn').addEventListener('click', ()=>{ sfxClick(); replayNext(); });
+  document.getElementById('replay-play-btn').addEventListener('click', ()=>{ sfxClick(); replayTogglePlay(); });
+  document.getElementById('replay-close-btn').addEventListener('click', ()=>{ sfxClick(); closeReplay(); });
+  document.querySelectorAll('.replay-speed-btn').forEach(b=>{
+    b.addEventListener('click', ()=>{ sfxClick(); setReplaySpeed(+b.dataset.speed); });
+  });
+}
+
+/* ══════════════════════════════════════
+   回放引擎（D-2）
+   純重演：獨立變數（replayEntry/replayStep/replayGrid）＋獨立 mini board（#replay-board），
+   全程不觸碰真實遊戲狀態（grid/pieces/score/undo 快照/localStorage 皆不動）。
+   分數直接顯示紀錄的 s 值，不重算（避免未來計分改版讓舊回放對不上）。
+══════════════════════════════════════ */
+let replayEntry = null;   // 目前正在回放的歷史紀錄（history[] 中的一筆）
+let replayStep = 0;       // 目前顯示到第幾步（0＝initialGrid，N＝moves[0..N-1] 已套用）
+let replayGrid = null;    // 回放專用棋盤資料，與真實 grid 完全獨立
+let replayTimer = null;   // 播放中／消行動畫中的 setTimeout id
+let replayPlaying = false;
+let replaySpeed = 1;      // 1 / 2 / 4
+
+// 在任意 grid 上套用一筆 move（純函式：放置→消行→補障礙物，邏輯對齊 doPlace 的資料面），
+// 完全不碰真實遊戲的 grid，複用 findFullLines/eraseLines 的 g 參數化版本
+function applyReplayMove(g, move){
+  const shape = PIECE_DEFS[move.d];
+  const color = COLORS[move.c];
+  for(let r=0;r<shape.length;r++)
+    for(let c=0;c<shape[r].length;c++)
+      if(shape[r][c]) g[move.r+r][move.col+c]=color;
+  const {fr,fc}=findFullLines(g);
+  eraseLines(fr,fc,g);
+  (move.obs||[]).forEach(([r,c])=>{ g[r][c]=OBS; });
+  return {fr,fc};
+}
+function computeReplayGridAtStep(entry, stepIdx){
+  const g = decodeGrid(entry.initialGrid);
+  for(let i=0;i<stepIdx;i++) applyReplayMove(g, entry.moves[i]);
+  return g;
+}
+function replayScoreAtStep(entry, stepIdx){
+  return stepIdx>0 ? entry.moves[stepIdx-1].s : 0;
+}
+function replayCellClass(r,c,val){
+  const boxRow=Math.floor(r/3), boxCol=Math.floor(c/3);
+  let cls='cell';
+  if((boxRow+boxCol)%2===1) cls+=' cell-alt';
+  if(val===OBS) cls+=' has-piece obstacle';
+  else if(val) cls+=' has-piece';
+  return cls;
+}
+function renderReplayBoard(g){
+  const board=document.getElementById('replay-board');
+  if(!board) return;
+  board.innerHTML='';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const el=document.createElement('div');
+    const val=g[r][c];
+    el.className=replayCellClass(r,c,val);
+    if(val && val!==OBS) el.style.background=val;
+    el.dataset.r=r; el.dataset.c=c;
+    board.appendChild(el);
+  }
+}
+function updateReplayControls(){
+  if(!replayEntry) return;
+  const total = replayEntry.moves.length;
+  document.getElementById('replay-prev-btn').disabled = replayStep<=0;
+  document.getElementById('replay-next-btn').disabled = replayStep>=total;
+  document.getElementById('replay-play-btn').disabled = replayStep>=total;
+  document.getElementById('replay-play-btn').textContent = replayPlaying ? '暫停' : '播放';
+  document.getElementById('replay-status').textContent = replayStep>=total ? '回放結束' : '';
+  document.getElementById('replay-score').textContent = '分數：' + replayScoreAtStep(replayEntry, replayStep);
+}
+function stopReplayPlaying(){
+  replayPlaying = false;
+  if(replayTimer){ clearTimeout(replayTimer); replayTimer=null; }
+}
+// 靜態跳到指定步數（不做逐格動畫），用於「上一步」
+function renderReplayStepStatic(stepIdx){
+  if(!replayEntry) return;
+  replayStep = Math.max(0, Math.min(replayEntry.moves.length, stepIdx));
+  replayGrid = computeReplayGridAtStep(replayEntry, replayStep);
+  renderReplayBoard(replayGrid);
+  updateReplayControls();
+}
+// 前進一步，帶「放置→消行」動畫，時序：先顯示放置的方塊，若該步有消行才顯示消除動畫再移除格子
+function advanceReplayStepAnimated(onDone){
+  if(!replayEntry) return;
+  const total = replayEntry.moves.length;
+  if(replayStep>=total){ onDone && onDone(); return; }
+  const move = replayEntry.moves[replayStep];
+  const shape = PIECE_DEFS[move.d];
+  const color = COLORS[move.c];
+  const placedGrid = replayGrid.map(row=>row.slice());
+  const placedCoords=[];
+  for(let r=0;r<shape.length;r++)
+    for(let c=0;c<shape[r].length;c++)
+      if(shape[r][c]){ placedGrid[move.r+r][move.col+c]=color; placedCoords.push([move.r+r,move.col+c]); }
+  renderReplayBoard(placedGrid);
+  placedCoords.forEach(([r,c])=>{
+    const el=document.querySelector(`#replay-board .cell[data-r="${r}"][data-c="${c}"]`);
+    if(el) el.classList.add('place-pop');
+  });
+  const {fr,fc}=findFullLines(placedGrid);
+  const stepDur = 600/replaySpeed;
+  if(fr.length||fc.length){
+    const toAnim=new Set();
+    fr.forEach(r=>{ for(let c=0;c<COLS;c++) toAnim.add(r*COLS+c); });
+    fc.forEach(c=>{ for(let r=0;r<ROWS;r++) toAnim.add(r*COLS+c); });
+    toAnim.forEach(idx2=>{
+      const r2=Math.floor(idx2/COLS), c2=idx2%COLS;
+      const el=document.querySelector(`#replay-board .cell[data-r="${r2}"][data-c="${c2}"]`);
+      if(el) el.classList.add(placedGrid[r2][c2]===OBS?'obs-clearing':'clearing');
+    });
+    replayTimer = setTimeout(()=>{
+      replayTimer=null;
+      eraseLines(fr,fc,placedGrid);
+      (move.obs||[]).forEach(([r,c])=>{ placedGrid[r][c]=OBS; });
+      replayGrid = placedGrid;
+      replayStep++;
+      renderReplayBoard(replayGrid);
+      updateReplayControls();
+      onDone && onDone();
+    }, Math.min(380, stepDur*0.7));
+  } else {
+    (move.obs||[]).forEach(([r,c])=>{ placedGrid[r][c]=OBS; });
+    replayGrid = placedGrid;
+    replayStep++;
+    renderReplayBoard(replayGrid);
+    updateReplayControls();
+    onDone && onDone();
+  }
+}
+function replayNext(){
+  if(!replayEntry) return;
+  stopReplayPlaying();
+  advanceReplayStepAnimated();
+}
+function replayPrev(){
+  if(!replayEntry) return;
+  stopReplayPlaying();
+  renderReplayStepStatic(replayStep-1);
+}
+function replayTogglePlay(){
+  if(!replayEntry) return;
+  if(replayPlaying){ stopReplayPlaying(); updateReplayControls(); return; }
+  if(replayStep>=replayEntry.moves.length) return;
+  replayPlaying = true;
+  updateReplayControls();
+  const tick=()=>{
+    if(!replayPlaying) return;
+    const total=replayEntry.moves.length;
+    if(replayStep>=total){ stopReplayPlaying(); updateReplayControls(); return; }
+    advanceReplayStepAnimated(()=>{
+      if(!replayPlaying) return;
+      if(replayStep>=total){ stopReplayPlaying(); updateReplayControls(); return; }
+      replayTimer=setTimeout(tick, 600/replaySpeed);
+    });
+  };
+  tick();
+}
+function setReplaySpeed(sp){
+  replaySpeed = sp;
+  document.querySelectorAll('.replay-speed-btn').forEach(b=>{
+    b.classList.toggle('active', +b.dataset.speed===sp);
+  });
+}
+function openReplay(entryIdx){
+  const entry = history[entryIdx];
+  if(!entry || !entry.moves) return; // 局過長（moves 為 null）不提供回放
+  stopReplayPlaying();
+  replayEntry = entry;
+  replayStep = 0;
+  replayGrid = decodeGrid(entry.initialGrid);
+  document.getElementById('history-list-view').hidden = true;
+  document.getElementById('history-replay-view').hidden = false;
+  renderReplayBoard(replayGrid);
+  updateReplayControls();
+}
+function closeReplay(){
+  stopReplayPlaying();
+  replayEntry = null; replayGrid = null; replayStep = 0;
+  const replayView=document.getElementById('history-replay-view');
+  const listView=document.getElementById('history-list-view');
+  if(replayView) replayView.hidden = true;
+  if(listView) listView.hidden = false;
+}
+
+/* ══════════════════════════════════════
+   PWA 安裝按鈕（C-5）
+   不支援 beforeinstallprompt 的瀏覽器（如 iOS Safari）永遠不會觸發事件，
+   按鈕維持 HTML 內聯的 display:none，不做任何 fallback 提示。
+══════════════════════════════════════ */
+let deferredInstallPrompt = null;
+function initInstallButton(){
+  const btn=document.getElementById('install-btn');
+  if(!btn) return;
+  window.addEventListener('beforeinstallprompt', e=>{
+    e.preventDefault();
+    deferredInstallPrompt = e;
+    btn.style.display = '';
+  });
+  btn.addEventListener('click', ()=>{
+    if(!deferredInstallPrompt) return;
+    sfxClick();
+    const promptEvent = deferredInstallPrompt;
+    deferredInstallPrompt = null;
+    btn.style.display = 'none';
+    promptEvent.prompt();
+  });
+  window.addEventListener('appinstalled', ()=>{
+    deferredInstallPrompt = null;
+    btn.style.display = 'none';
+  });
+}
+
+/* ══════════════════════════════════════
+   THEME TOGGLE（design spec §E）
+   FOUC-safe 的初次主題判定已在 <head> 內聯 script 完成（設定 data-theme）；
+   這裡只負責 runtime 切換：更新 data-theme、寫回 localStorage、同步 meta theme-color。
+══════════════════════════════════════ */
+const SK_THEME = 'bpz_v4_theme';
+function applyThemeColor(theme){
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if(meta) meta.setAttribute('content', theme==='dark' ? '#17151F' : '#F6F5FB');
+}
+function initThemeToggle(){
+  const btn = document.getElementById('theme-toggle-btn');
+  if(!btn) return;
+  // 讓 meta theme-color 與 <head> 內聯 script 已解析出的主題保持一致（避免 pre-JS fallback 值殘留）
+  applyThemeColor(document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light');
+  btn.addEventListener('click', ()=>{
+    sfxClick();
+    const current = document.documentElement.getAttribute('data-theme')==='dark' ? 'dark' : 'light';
+    const next = current==='dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    try{ localStorage.setItem(SK_THEME, next); }catch(e){}
+    applyThemeColor(next);
+  });
+}
 
 if('serviceWorker' in navigator)
   window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 
+initBoardEvents();
+initThemeToggle();
+initSoundToggle();
+initStatsOverlay();
+initInstallButton();
 resumeOrNew();
 </script>
 </body>

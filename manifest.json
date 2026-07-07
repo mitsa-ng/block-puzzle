@@ -4,8 +4,8 @@
   "description": "拖曳方塊填滿行列，消除得分的益智遊戲",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#0a0a12",
-  "theme_color": "#0a0a12",
+  "background_color": "#17151F",
+  "theme_color": "#17151F",
   "orientation": "portrait-primary",
   "icons": [
     {
