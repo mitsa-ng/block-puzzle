@@ -1,10 +1,10 @@
 # Loop State — My Project
 
-Last run: 2026-07-10 — Cloudflare 多人 Worker 與 Vercel v20 endpoint 已部署，production 雙 client 驗證完成
+Last run: 2026-07-10 — Production 多人負載測試完成：500 clients gameplay PASS、graceful close FAIL
 
 ## High Priority (loop is acting or waiting on human)
 
-- 無阻斷項目；production 多人連線已修復並驗證。依安全規則等待 human 決定是否 push 本輪 commit。
+- Production gameplay 無阻斷；高負載發現 500/500 sockets 無法完成正常 close handshake，等待 human 決定是否修正。Git push 仍待 human 明示。
 
 ## Watch List
 
@@ -53,3 +53,6 @@ Run log:
 - 公開 Worker 驗證：兩個 Chrome clients 已完成 create／join／Ready／countdown／playing，雙方 console 無 error；24/24 Worker tests PASS。
 - Vercel v20 deployment `dpl_A16NTANomgLYPRDKmBjaoPwgrTqE` 已 alias 至 `https://mitsabkpuz.vercel.app`；production HTML 載入 v20 script，SW cache 亦為 v20。
 - Production 最終驗證：不帶 `mpServer` 的兩個 Chrome clients 完成 create／join／Ready／countdown／playing，雙方 console 無 error；fresh-context verifier final PASS。
+- 負載 ramp：2／25／100 房 gameplay 全數成功；首輪 250 房為 248/250，2 個 host 等待 `match_result` 超過 20 秒（0.8%），無 handshake failure 或 HTTP 5xx。
+- 嚴格 peak：實際同時 500 sockets；250/250 房、500/500 clients 完成至雙方 `match_result`，p95 connect／join／start／result 為 1349／110／111／84 ms，耗時 12.83 秒。
+- 負載 finding：client `close(1000)` 後 500/500 sockets 在 5 秒內未收到正常 close event，強制終止後皆為 1006；v2 harness 與 raw metrics 經 fresh-context verifier PASS。
