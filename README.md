@@ -47,7 +47,7 @@ python3 -m http.server 8000
 http://localhost:8000/?mpServer=http://127.0.0.1:8787
 ```
 
-其中一方建立「比分快賽」或「障礙對戰」，另一方輸入房碼加入，雙方按 Ready 即開始。未指定 `mpServer` 時，client 會連同源 `/room/{房碼}`，適合由正式網域反向代理 Worker。
+其中一方建立「比分快賽」或「障礙對戰」，另一方輸入房碼加入，雙方按 Ready 即開始。多人 server 解析以明確的 `?mpServer=` 為最高優先；`mitsabkpuz.vercel.app` 未指定 query 時預設使用下方 Cloudflare Worker；任何 localhost／127.0.0.1／`[::1]` 則使用同 hostname 的 `8787`；其他正式自架網域仍連同源 `/room/{房碼}`，可自行反向代理 Worker。
 
 兩種對戰都維持 180 秒：時間內先無法落子的一方立即判負（包含收到障礙後塞滿）；若雙方都撐到時間結束，則由總分較高者獲勝。
 
@@ -71,7 +71,7 @@ MP_MODE=attack node tests/score-knockout-live-smoke.mjs
 npx -y wrangler@latest deploy --config wrangler.jsonc
 ```
 
-正式前端若與 Worker 不同網域，可在網址加 `?mpServer=https://你的-worker.example.workers.dev`。不要把 Cloudflare API token 或其他秘密寫進前端。
+正式 Vercel 網址 `https://mitsabkpuz.vercel.app` 預設會連到已部署的 `https://block-puzzle-multiplayer.xingencai060.workers.dev`。若要切換其他 room server，仍可在網址加 `?mpServer=https://你的-worker.example.workers.dev`，此 query override 優先於預設值。不要把 Cloudflare API token 或其他秘密寫進前端。
 
 ---
 

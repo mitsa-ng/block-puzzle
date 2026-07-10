@@ -43,9 +43,9 @@
 
 ### 2026-07-10 本機 multiplayer server 預設值
 
-- 目標：直接開啟本機 `localhost:8765/` 時，不必手動加入 `mpServer` query 也能連到 Worker。
-- 驗收：只在 loopback hostname 的 `8765` 自動改用同 hostname `8787`；明確 `mpServer` 優先；其他部署仍使用目前 origin。
-- 驗證：client self-test、Chrome 無 query 建房、8787 WebSocket 101、8765 無 `/room`、Worker tests 與 fresh-context verifier。
+- 目標：直接開啟任何 localhost／127.0.0.1／`[::1]` 前端時，不必手動加入 `mpServer` query 也能連到同 hostname 的 Worker `8787`。
+- 驗收：明確 `mpServer` query 永遠優先；所有 loopback hostname 預設改用 `8787`；`mitsabkpuz.vercel.app` 預設使用 `block-puzzle-multiplayer.xingencai060.workers.dev`；其他部署仍使用目前 origin，保留自架反向代理能力。
+- 驗證：client self-test 覆蓋 query、三種 loopback、Vercel 特例與其他 origin；Chrome 無 query 建房、8787 WebSocket 101、8765 無 `/room`、Worker tests 與 fresh-context verifier。
 
 ### 2026-07-10 多人歷史回放
 
@@ -64,6 +64,12 @@
 - 目標：確保 Vercel production 同時部署 `index.html` 與負責多人頁籤事件的 `multiplayer.js`。
 - 驗收：`.vercelignore` allowlist 包含 `multiplayer.js`；production `/multiplayer.js` 回 200；mobile viewport 可切到多人頁；Service Worker app-shell install 不再因缺少資產而失敗。
 - 驗證：Vercel deployment file list／HTTP 200、production mobile Browser 點擊、console／network、Worker tests 與 fresh-context verifier。
+
+### 2026-07-10 Production 多人 Worker endpoint
+
+- 目標：讓 `https://mitsabkpuz.vercel.app` 預設連線至已部署的 Cloudflare Durable Object Worker，同時保留 `mpServer` query override、本機 8787 規則與其他自架網域的同源行為。
+- 驗收：production 不帶 query 即可建立／加入房間；兩位真實 clients 可 Ready、完成倒數並進入對戰；舊 Service Worker cache 不會繼續使用錯誤 endpoint。
+- 驗證：公開 Worker WebSocket smoke、production 雙 Browser client、console／network、Worker 24/24、client self-test、syntax／inline parse、diff check 與 fresh-context verifier。
 
 ## 採用 defaults
 

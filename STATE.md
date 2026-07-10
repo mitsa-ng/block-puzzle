@@ -1,16 +1,16 @@
 # Loop State — My Project
 
-Last run: 2026-07-10 — Vercel production 多人 client 資產修正、部署與手機驗證完成
+Last run: 2026-07-10 — Cloudflare 多人 Worker 與 Vercel v20 endpoint 已部署，production 雙 client 驗證完成
 
 ## High Priority (loop is acting or waiting on human)
 
-- 無阻斷項目；production 已更新並驗證。依安全規則等待 human 決定是否把 branch merge 回 `main`。
+- 無阻斷項目；production 多人連線已修復並驗證。依安全規則等待 human 決定是否 push 本輪 commit。
 
 ## Watch List
 
 - 保持現有單人 new/resume/history/replay 流程。
 - Multiplayer MVP 是 casual trust；公開排名／獎勵前需要 server-side rules validation。
-- 修改已推送至 `codex/multiplayer-implementation` branch；工作目錄位於 `/private/tmp/block-puzzle-multiplayer`。
+- 本輪 endpoint v20 修改位於 `/private/tmp/block-puzzle-multiplayer` 的 `codex/multiplayer-implementation` branch；production 已部署，Git push 待 human 明示。
 
 ## Recent Noise (ignored this run)
 
@@ -47,3 +47,9 @@ Run log:
 - Vercel 修正：allowlist 加入 `!multiplayer.js`；CLI dry-run 與 preview deployment 均包含 8 個檔案及 `multiplayer.js`，syntax、inline parse、Worker tests 24/24、diff check 與 fresh-context verifier 全數 PASS。
 - Production 部署：deployment `dpl_249PGzWvq1xWn7d9KmxfXkTc4r3V` 已 alias 至 `https://mitsabkpuz.vercel.app`；首頁、`multiplayer.js`、`sw.js` 均回 200。
 - Production 手機驗證：Browser 390×844 可由單人切換到多人 tab，tabpanel 正常顯示、無水平溢出且 console logs 為空。
+- Production 連線重現：Chrome 建立房間後由「正在連線」轉為「連線中斷，15 秒內同頁重連」。
+- WebSocket 根因：非 localhost 預設連同源 `wss://mitsabkpuz.vercel.app/room/*`，但 Vercel 沒有 `/room` backend；repo 內 Worker 必須另行部署。
+- Cloudflare deployment：Worker version `bdc775e0-403e-4ccc-bf8b-7139b8b4db9f` 已部署至 `block-puzzle-multiplayer.xingencai060.workers.dev`，Durable Object binding 生效。
+- 公開 Worker 驗證：兩個 Chrome clients 已完成 create／join／Ready／countdown／playing，雙方 console 無 error；24/24 Worker tests PASS。
+- Vercel v20 deployment `dpl_A16NTANomgLYPRDKmBjaoPwgrTqE` 已 alias 至 `https://mitsabkpuz.vercel.app`；production HTML 載入 v20 script，SW cache 亦為 v20。
+- Production 最終驗證：不帶 `mpServer` 的兩個 Chrome clients 完成 create／join／Ready／countdown／playing，雙方 console 無 error；fresh-context verifier final PASS。
