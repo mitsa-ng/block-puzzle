@@ -5,8 +5,11 @@
 | 檔案 | 說明 |
 |------|------|
 | `index.html` | 遊戲主體（唯一必要檔案，可獨立執行） |
+| `multiplayer.js` | 多人房間、連線、障礙攻擊與對戰回放 client |
 | `manifest.json` | PWA Web App Manifest（讓使用者可「加到主畫面」） |
 | `sw.js` | Service Worker（離線快取支援） |
+| `worker/index.mjs` | Cloudflare Worker／Durable Object room server |
+| `wrangler.jsonc` | Durable Object binding 與 SQLite migration |
 
 ---
 
@@ -23,6 +26,52 @@ python -m http.server 8000
 ```
 
 > ⚠️ PWA 功能（加到主畫面、離線）需要透過 HTTPS 伺服器提供。
+
+### 多人對戰本機測試
+
+另開一個 terminal 啟動 Durable Object server：
+
+```bash
+npx -y wrangler@latest dev --local --port 8787 --config wrangler.jsonc
+```
+
+再啟動靜態前端：
+
+```bash
+python3 -m http.server 8000
+```
+
+用兩個獨立 browser session 開啟：
+
+```text
+http://localhost:8000/?mpServer=http://127.0.0.1:8787
+```
+
+其中一方建立「比分快賽」或「障礙對戰」，另一方輸入房碼加入，雙方按 Ready 即開始。未指定 `mpServer` 時，client 會連同源 `/room/{房碼}`，適合由正式網域反向代理 Worker。
+
+兩種對戰都維持 180 秒：時間內先無法落子的一方立即判負（包含收到障礙後塞滿）；若雙方都撐到時間結束，則由總分較高者獲勝。
+
+多人 lobby 會顯示雙方 Ready 狀態、房碼複製與即時比分差。完成對戰可解鎖 7 個本機成就；場次、勝場、連勝與成就保存在瀏覽器 `localStorage`（key：`bpz_duel_progress_v1`），不會上傳到 server。
+
+多人歷史使用 `bpz_duel_replays_v1` 的 v2 分層格式：最多保留 50 場 allowlist 結果摘要，最近最多 8 場另存通過完整性驗證的 canonical 回放，總量限制為 3 MiB。超過回放數量或容量時會先把最舊完整回放降級為僅結果，所有回放都已降級仍超量才刪除最舊結果。可從多人區域的「歷史」查看、重新播放或刪除；資料只存在目前裝置，不包含房碼、token 或未知欄位，也不會混入單人歷史。
+
+自動檢查：
+
+```bash
+node --test tests/multiplayer-worker.test.mjs
+# Wrangler dev 執行中時，跑真實 WebSocket 雙 client smoke
+node tests/multiplayer-live-smoke.mjs
+node tests/score-knockout-live-smoke.mjs
+MP_MODE=attack node tests/score-knockout-live-smoke.mjs
+```
+
+部署 room server：
+
+```bash
+npx -y wrangler@latest deploy --config wrangler.jsonc
+```
+
+正式前端若與 Worker 不同網域，可在網址加 `?mpServer=https://你的-worker.example.workers.dev`。不要把 Cloudflare API token 或其他秘密寫進前端。
 
 ---
 

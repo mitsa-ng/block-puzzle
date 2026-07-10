@@ -29,3 +29,4 @@ service-worker-cache/
 *.bak-*
 .claude/
 .vercel
+.wrangler/
