@@ -18,6 +18,7 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="theme-color" content="#17151F" />
   <link rel="manifest" href="manifest.json" />
+  <link rel="icon" href="icon.png" />
   <link rel="apple-touch-icon" href="icon-192.png" />
   <title>Block Puzzle — 方塊消除挑戰</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -598,7 +599,14 @@
     #stats-overlay .btn.primary { background:#9B7BFF; border-color:#9B7BFF; color:#17151F; }
     #stats-overlay .btn.primary:hover { filter:brightness(0.92); }
     .history-empty { color:#A9A3C2; font-size:13px; text-align:center; padding:24px 0; }
-    .history-toolbar { display:flex; justify-content:flex-end; margin-bottom:10px; }
+    .history-library-tabs { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:10px; }
+    .history-library-tab, .history-action-btn, .history-card-btn {
+      min-height:44px; padding:8px 12px; font-size:12px;
+    }
+    .history-library-tab.active { background:#9B7BFF !important; border-color:#9B7BFF !important; color:#17151F !important; }
+    .history-toolbar { display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+    .history-notice { min-height:20px; margin:-2px 0 10px; color:#A9A3C2; font-size:12px; line-height:1.5; }
+    .history-notice.error { color:#FF8A70; }
     .history-list { display:flex; flex-direction:column; gap:10px; }
     .history-card { display:flex; align-items:center; gap:10px; flex-wrap:wrap;
       background:#272335; border:1px solid #322D45; border-radius:var(--radius-md); padding:10px 12px; }
@@ -608,6 +616,7 @@
     .history-card-info { flex:1; min-width:120px; }
     .history-card-date { font-size:11px; color:#A9A3C2; margin-bottom:2px; }
     .history-card-stats { font-size:12px; color:#F1EEFB; }
+    .history-card-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
     .history-replay-btn { padding:8px 12px; min-height:34px; font-size:12px; white-space:nowrap; flex-shrink:0; }
     #history-list-view[hidden], #history-replay-view[hidden] { display:none; }
     .replay-score { text-align:center; font-family:'Baloo 2',sans-serif; font-weight:700; font-size:16px; color:#FFB454; margin-bottom:8px; }
@@ -723,7 +732,17 @@
     <!-- 歷史／回放（D-1/D-2）：清單與回放子面板同置一個 tab-panel 內，用 hidden 切換（同 overlay 內切換） -->
     <div class="info-tab-panel" id="tab-panel-history" data-tab-panel="history" role="tabpanel" aria-labelledby="tab-btn-history" hidden>
       <div id="history-list-view">
-        <div class="history-toolbar"><button class="btn" id="history-clear-btn" type="button">清除歷史</button></div>
+        <div class="history-library-tabs" role="group" aria-label="回放清單類型">
+          <button class="btn history-library-tab active" id="history-recent-tab" type="button" aria-label="顯示最近回放" aria-pressed="true">最近</button>
+          <button class="btn history-library-tab" id="history-saved-tab" type="button" aria-label="顯示已收藏回放" aria-pressed="false">已收藏</button>
+        </div>
+        <div class="history-toolbar">
+          <button class="btn history-action-btn" id="history-export-btn" type="button" aria-label="匯出所有收藏回放">匯出收藏</button>
+          <button class="btn history-action-btn" id="history-import-btn" type="button" aria-label="從檔案匯入收藏回放">匯入檔案</button>
+          <button class="btn history-action-btn" id="history-clear-btn" type="button">清除歷史</button>
+          <input id="history-import-input" type="file" accept=".json,.bpz-replays.json,application/json" hidden>
+        </div>
+        <div class="history-notice" id="history-notice" role="status" aria-live="polite"></div>
         <div class="history-list" id="history-list"></div>
       </div>
       <div id="history-replay-view" hidden>
@@ -937,6 +956,170 @@ function decodeGrid(str){
   }
   return g;
 }
+
+/* ══════════════════════════════════════
+   本地回放收藏／JSON 資料轉移（E-1）
+   收藏與「最近 20 局」分開保存；所有匯入資料先完整驗證，通過後才單次寫入 localStorage。
+══════════════════════════════════════ */
+const SK_SAVED_REPLAYS = 'bpz_v4_saved_replays';
+const SAVED_REPLAY_FORMAT = 'block-puzzle-saved-replays';
+const SAVED_REPLAY_FORMAT_VERSION = 1;
+const SAVED_REPLAY_RULES_VERSION = 1;
+const MAX_SAVED_REPLAYS = 50;
+const MAX_SAVED_REPLAYS_BYTES = 4 * 1024 * 1024;
+const GRID_CODEC_RE = /^[.X1-9]{81}$/;
+let savedReplays = [];
+let historyLibraryMode = 'recent';
+let savedReplayLoadNotice = '';
+
+function replayDataError(message){ return new Error(message); }
+function isNonNegativeSafeInt(value){ return Number.isSafeInteger(value) && value>=0; }
+function assertReplayData(condition, message){ if(!condition) throw replayDataError(message); }
+function utf8ByteLength(text){ return new TextEncoder().encode(text).byteLength; }
+function canonicalReplayText(replay){ return JSON.stringify(replay); }
+function replayContentId(replay){
+  const bytes = new TextEncoder().encode(canonicalReplayText(replay));
+  let hash = 0xcbf29ce484222325n;
+  for(const byte of bytes){
+    hash ^= BigInt(byte);
+    hash = BigInt.asUintN(64, hash * 0x100000001b3n);
+  }
+  return 'r1-' + hash.toString(16).padStart(16,'0');
+}
+function validateGridCodec(value, label){
+  assertReplayData(typeof value==='string' && GRID_CODEC_RE.test(value), `${label} 必須是 81 字元 grid codec`);
+}
+function normalizeReplayData(raw){
+  assertReplayData(raw && typeof raw==='object' && !Array.isArray(raw), '回放內容必須是物件');
+  assertReplayData(isNonNegativeSafeInt(raw.ts), '回放時間格式錯誤');
+  assertReplayData(isNonNegativeSafeInt(raw.score), '回放分數格式錯誤');
+  assertReplayData(Number.isSafeInteger(raw.level) && raw.level>=1, '回放等級格式錯誤');
+  assertReplayData(isNonNegativeSafeInt(raw.lines), '回放消行數格式錯誤');
+  assertReplayData(isNonNegativeSafeInt(raw.maxStreak), '回放 streak 格式錯誤');
+  validateGridCodec(raw.initialGrid, 'initialGrid');
+  assertReplayData(Array.isArray(raw.moves) && raw.moves.length<=MOVES_CAP, `moves 必須是最多 ${MOVES_CAP} 步的陣列`);
+
+  const normalizedMoves = raw.moves.map((source, index)=>{
+    const step = index+1;
+    assertReplayData(source && typeof source==='object' && !Array.isArray(source), `第 ${step} 步格式錯誤`);
+    assertReplayData(Number.isInteger(source.d) && source.d>=0 && source.d<PIECE_DEFS.length, `第 ${step} 步方塊索引超出範圍`);
+    assertReplayData(Number.isInteger(source.c) && source.c>=0 && source.c<COLORS.length, `第 ${step} 步顏色索引超出範圍`);
+    assertReplayData(Number.isInteger(source.r) && source.r>=0 && source.r<ROWS, `第 ${step} 步列座標超出範圍`);
+    assertReplayData(Number.isInteger(source.col) && source.col>=0 && source.col<COLS, `第 ${step} 步欄座標超出範圍`);
+    assertReplayData(Array.isArray(source.obs) && source.obs.length<=ROWS*COLS, `第 ${step} 步障礙座標格式錯誤`);
+    assertReplayData(isNonNegativeSafeInt(source.s), `第 ${step} 步分數格式錯誤`);
+    const obs = source.obs.map((coord, obsIndex)=>{
+      assertReplayData(Array.isArray(coord) && coord.length===2, `第 ${step} 步第 ${obsIndex+1} 個障礙座標格式錯誤`);
+      const [r,c] = coord;
+      assertReplayData(Number.isInteger(r) && r>=0 && r<ROWS && Number.isInteger(c) && c>=0 && c<COLS,
+        `第 ${step} 步障礙座標超出範圍`);
+      return [r,c];
+    });
+    return {d:source.d, c:source.c, r:source.r, col:source.col, obs, s:source.s};
+  });
+
+  const replay = {
+    ts:raw.ts, score:raw.score, level:raw.level, lines:raw.lines, maxStreak:raw.maxStreak,
+    finalGrid:'', initialGrid:raw.initialGrid, moves:normalizedMoves,
+  };
+  const reconstructed = decodeGrid(replay.initialGrid);
+  let reconstructedProgress={score:0,level:1,lines:0,streak:0,maxStreak:0};
+  normalizedMoves.forEach((move,index)=>{
+    const step=index+1, shape=PIECE_DEFS[move.d];
+    for(let r=0;r<shape.length;r++) for(let c=0;c<shape[r].length;c++) if(shape[r][c]){
+      const rr=move.r+r, cc=move.col+c;
+      assertReplayData(rr>=0 && rr<ROWS && cc>=0 && cc<COLS, `第 ${step} 步方塊超出棋盤`);
+      assertReplayData(reconstructed[rr][cc]===null, `第 ${step} 步與既有棋盤重疊`);
+    }
+    const postClear = reconstructed.map(row=>row.slice());
+    applyReplayMove(postClear, Object.assign({},move,{obs:[]}));
+    const seenObs = new Set();
+    move.obs.forEach(([r,c])=>{
+      const key=r+','+c;
+      assertReplayData(!seenObs.has(key), `第 ${step} 步有重複障礙座標`);
+      assertReplayData(postClear[r][c]===null, `第 ${step} 步障礙覆蓋非空格`);
+      seenObs.add(key); postClear[r][c]=OBS;
+    });
+    const outcome=applyReplayMove(reconstructed, move);
+    reconstructedProgress=computePlacementProgress(
+      shape,outcome.fr.length+outcome.fc.length,outcome.obsCleared,reconstructedProgress
+    );
+    assertReplayData(move.s===reconstructedProgress.score, `第 ${step} 步分數與重建結果不一致`);
+  });
+  assertReplayData(raw.score===reconstructedProgress.score, '回放總分與重建結果不一致');
+  assertReplayData(raw.level===reconstructedProgress.level, '回放等級與重建結果不一致');
+  assertReplayData(raw.lines===reconstructedProgress.lines, '回放消行數與重建結果不一致');
+  assertReplayData(raw.maxStreak===reconstructedProgress.maxStreak, '回放最高 streak 與重建結果不一致');
+  const rebuiltFinalGrid = encodeGrid(reconstructed);
+  if(raw.finalGrid!==undefined && raw.finalGrid!==null){
+    validateGridCodec(raw.finalGrid, 'finalGrid');
+    assertReplayData(raw.finalGrid===rebuiltFinalGrid, 'finalGrid 與重建結果不一致');
+  }
+  replay.finalGrid=rebuiltFinalGrid;
+  return replay;
+}
+function normalizeSavedReplayItem(raw){
+  assertReplayData(raw && typeof raw==='object' && !Array.isArray(raw), '收藏項目必須是物件');
+  assertReplayData(typeof raw.name==='string' && raw.name.trim().length>0 && raw.name.trim().length<=80, '收藏名稱必須是 1–80 字元');
+  assertReplayData(typeof raw.savedAt==='string' && !Number.isNaN(Date.parse(raw.savedAt)), '收藏時間格式錯誤');
+  const replay=normalizeReplayData(raw.replay);
+  const expectedId=replayContentId(replay);
+  assertReplayData(raw.id===expectedId, '收藏 ID 與回放內容不符');
+  return {id:expectedId, savedAt:new Date(raw.savedAt).toISOString(), name:raw.name.trim(), replay};
+}
+function makeSavedReplayEnvelope(items){
+  return {
+    format:SAVED_REPLAY_FORMAT,
+    formatVersion:SAVED_REPLAY_FORMAT_VERSION,
+    rulesVersion:SAVED_REPLAY_RULES_VERSION,
+    exportedAt:new Date().toISOString(),
+    replays:items,
+  };
+}
+function validateSavedReplayEnvelope(raw){
+  assertReplayData(raw && typeof raw==='object' && !Array.isArray(raw), '檔案最外層必須是物件');
+  assertReplayData(raw.format===SAVED_REPLAY_FORMAT, '未知的回放檔案格式');
+  assertReplayData(raw.formatVersion===SAVED_REPLAY_FORMAT_VERSION, '不支援的 formatVersion');
+  assertReplayData(raw.rulesVersion===SAVED_REPLAY_RULES_VERSION, '不支援的 rulesVersion');
+  assertReplayData(typeof raw.exportedAt==='string' && !Number.isNaN(Date.parse(raw.exportedAt)), 'exportedAt 格式錯誤');
+  assertReplayData(Array.isArray(raw.replays) && raw.replays.length<=MAX_SAVED_REPLAYS, `收藏最多 ${MAX_SAVED_REPLAYS} 筆`);
+  const unique=[];
+  const byId=new Map();
+  raw.replays.forEach(source=>{
+    const item=normalizeSavedReplayItem(source);
+    const existing=byId.get(item.id);
+    if(existing){
+      assertReplayData(canonicalReplayText(existing.replay)===canonicalReplayText(item.replay), `收藏 ID ${item.id} 內容衝突`);
+      return;
+    }
+    byId.set(item.id,item); unique.push(item);
+  });
+  return {replays:unique};
+}
+function persistSavedReplays(nextItems){
+  assertReplayData(Array.isArray(nextItems) && nextItems.length<=MAX_SAVED_REPLAYS, `收藏最多 ${MAX_SAVED_REPLAYS} 筆，請先刪除部分收藏`);
+  const envelope=makeSavedReplayEnvelope(nextItems);
+  const serialized=JSON.stringify(envelope);
+  assertReplayData(utf8ByteLength(serialized)<=MAX_SAVED_REPLAYS_BYTES, '收藏資料已超過 4 MiB，請先刪除部分收藏');
+  try{
+    localStorage.setItem(SK_SAVED_REPLAYS,serialized);
+  }catch(e){
+    throw replayDataError('瀏覽器儲存空間不足，請刪除部分收藏後再試');
+  }
+  savedReplays=nextItems;
+}
+function loadSavedReplays(){
+  try{
+    const serialized=localStorage.getItem(SK_SAVED_REPLAYS);
+    if(!serialized){ savedReplays=[]; return; }
+    assertReplayData(utf8ByteLength(serialized)<=MAX_SAVED_REPLAYS_BYTES, '收藏資料超過 4 MiB 上限');
+    savedReplays=validateSavedReplayEnvelope(JSON.parse(serialized)).replays;
+  }catch(e){
+    savedReplays=[];
+    savedReplayLoadNotice='收藏資料格式錯誤，為保護原始資料，本次未載入。';
+  }
+}
+loadSavedReplays();
 
 // game over 時寫入一筆歷史（見 showGameOver 呼叫處，沿用 fromResume guard 防重複）。
 // moves 超過 MOVES_CAP（局過長）時存 null，歷史仍保留分數/等級/縮圖，UI 標注「局過長，無回放」。
@@ -1250,12 +1433,30 @@ function simulateFullLines(piece,sr,sc){
   return {fr,fc};
 }
 
-// Returns count of obstacle cells inside cleared lines
-function countObsInLines(fr,fc){
+// Returns count of obstacle cells inside cleared lines（g 預設真實 grid，validator/replay 可傳獨立 grid）
+function countObsInLines(fr,fc,g){
+  g = g || grid;
   const hit=new Set();
-  fr.forEach(r=>{ for(let c=0;c<COLS;c++) if(grid[r][c]===OBS) hit.add(r*COLS+c); });
-  fc.forEach(c=>{ for(let r=0;r<ROWS;r++) if(grid[r][c]===OBS) hit.add(r*COLS+c); });
+  fr.forEach(r=>{ for(let c=0;c<COLS;c++) if(g[r][c]===OBS) hit.add(r*COLS+c); });
+  fc.forEach(c=>{ for(let r=0;r<ROWS;r++) if(g[r][c]===OBS) hit.add(r*COLS+c); });
   return hit.size;
+}
+
+// 單一步驟的純進度規則：真實遊戲與匯入 validator 共用，避免兩份 score/level/streak/lines 邏輯漂移。
+function computePlacementProgress(shape,total,obsCleared,state){
+  const cellCount=shape.flat().filter(Boolean).length;
+  const lineBonus=total>0 ? COMBO_BONUS[Math.min(total,COMBO_BONUS.length-1)]+total*18 : 0;
+  const obsBonus=obsCleared*OBS_BONUS_PER_CELL;
+  const pts=cellCount+lineBonus+obsBonus;
+  const streak=total>0 ? state.streak+1 : 0;
+  const streakBonus=(total>0 && streak>=2) ? streak*5 : 0;
+  const score=state.score+pts+streakBonus;
+  return {
+    pts, obsBonus, streakBonus, score, streak,
+    level:Math.floor(score/100)+1,
+    lines:state.lines+total,
+    maxStreak:Math.max(state.maxStreak,streak),
+  };
 }
 
 // g 參數化（預設真實 grid）：理由同 findFullLines，供 D-2 回放引擎在 mini grid 上複用。
@@ -2022,7 +2223,6 @@ function doPlace(idx,sr,sc){
     // 統計：累計消行數／單次最高消行（C-1）
     stats.totalLines += total;
     if(total > stats.maxCombo) stats.maxCombo = total;
-    gameLines += total; // D-1：本局累計消行數，供 game over 時寫入歷史紀錄
 
     // 成就：清空全盤（C-2）。判定時機必須在資料同步清除之後、且在下方升級可能生成新障礙物之前，
     // 否則升級補的障礙物會讓「全空」誤判為未達成。
@@ -2040,29 +2240,23 @@ function doPlace(idx,sr,sc){
     });
   }
 
-  // ── Scoring ──
-  const cellCount = piece.shape.flat().filter(Boolean).length;
-  const lineBonus  = total>0 ? COMBO_BONUS[Math.min(total,COMBO_BONUS.length-1)]+total*18 : 0;
-  const obsBonus   = obsCleared * OBS_BONUS_PER_CELL;
-  const pts        = cellCount + lineBonus + obsBonus;
-  score += pts;
-
-  // ── Streak（B-1）：有消行才累加，斷檔（本次無消行）歸零；streak≥2 起在消行分之後加獎勵分 ──
-  if(total>0) streak++; else streak=0;
-  const streakBonus = (total>0 && streak>=2) ? streak*5 : 0;
-  if(streakBonus>0) score += streakBonus;
+  // ── Scoring / progress：與回放 validator 共用同一純規則 ──
+  const progress=computePlacementProgress(piece.shape,total,obsCleared,{score,streak,lines:gameLines,maxStreak:gameMaxStreak});
+  const {pts,obsBonus,streakBonus}=progress;
+  ({score,streak}=progress);
+  gameLines=progress.lines;
+  gameMaxStreak=progress.maxStreak;
 
   // 統計／成就：最高連續 streak（C-1）／streak×5 成就（C-2）
   if(streak > stats.maxStreak) stats.maxStreak = streak;
   if(streak >= 5) unlockAchievement('streak5');
-  if(streak > gameMaxStreak) gameMaxStreak = streak; // D-1：本局最高 streak，供 game over 時寫入歷史紀錄
 
   // 成就：單局分數門檻（C-2），score 此時已含本次 pts 與 streakBonus
   if(score >= 500)  unlockAchievement('score500');
   if(score >= 1000) unlockAchievement('score1000');
 
   // ── Level-up check：務必在「非動畫分支的 renderBoard」／postPlace()／isGameOver() 之前生成障礙物（A2）──
-  const nl = Math.floor(score/100)+1;
+  const nl = progress.level;
   let newObsCoords = []; // D-2：本次放置若升級生成障礙物，座標要記進這步的 move.obs，回放才能重現
   if(nl > level){
     level = nl;
@@ -2303,6 +2497,15 @@ function formatHistoryDate(ts){
   const pad = n => String(n).padStart(2,'0');
   return `${d.getFullYear()}/${pad(d.getMonth()+1)}/${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
+function escapeHistoryText(value){
+  return String(value).replace(/[&<>"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+}
+function setReplayLibraryNotice(message,isError){
+  const el=document.getElementById('history-notice');
+  if(!el) return;
+  el.textContent=message||'';
+  el.classList.toggle('error',!!isError);
+}
 function renderHistoryThumb(finalGridStr){
   let html = '<div class="history-thumb">';
   for(let i=0;i<ROWS*COLS;i++){
@@ -2315,33 +2518,183 @@ function renderHistoryThumb(finalGridStr){
   html += '</div>';
   return html;
 }
-function renderHistoryPanel(){
-  const listEl=document.getElementById('history-list');
-  if(!listEl) return;
+function recentReplayId(entry){
+  if(!entry || !Array.isArray(entry.moves)) return null;
+  try{ return replayContentId(normalizeReplayData(entry)); }catch(e){ return null; }
+}
+function renderRecentHistoryList(listEl){
   if(history.length===0){
     listEl.innerHTML = '<div class="history-empty">尚無紀錄</div>';
     return;
   }
   listEl.innerHTML = history.map((entry,i)=>{
-    const replayDisabled = !entry.moves;
+    const replayId=recentReplayId(entry);
+    const replayDisabled=!replayId;
+    const alreadySaved=!!replayId && savedReplays.some(item=>item.id===replayId);
     return `<div class="history-card">
       ${renderHistoryThumb(entry.finalGrid)}
       <div class="history-card-info">
         <div class="history-card-date">${formatHistoryDate(entry.ts)}</div>
         <div class="history-card-stats">分數 ${entry.score}　等級 ${entry.level}　消行 ${entry.lines}</div>
       </div>
-      <button class="btn history-replay-btn" type="button" data-replay-idx="${i}"${replayDisabled?' disabled':''}>${replayDisabled?'局過長，無回放':'回放'}</button>
+      <div class="history-card-actions">
+        <button class="btn history-card-btn" type="button" data-save-replay-idx="${i}" aria-label="收藏第 ${i+1} 筆最近回放"${replayDisabled||alreadySaved?' disabled':''}>${alreadySaved?'已收藏':'收藏'}</button>
+        <button class="btn history-card-btn" type="button" data-replay-idx="${i}" aria-label="播放第 ${i+1} 筆最近回放"${replayDisabled?' disabled':''}>${replayDisabled?'無回放':'回放'}</button>
+      </div>
     </div>`;
   }).join('');
+}
+function renderSavedReplayList(listEl){
+  if(savedReplays.length===0){
+    listEl.innerHTML = '<div class="history-empty">尚無收藏回放</div>';
+    return;
+  }
+  listEl.innerHTML=savedReplays.map(item=>{
+    const replay=item.replay;
+    const safeName=escapeHistoryText(item.name);
+    return `<div class="history-card">
+      ${renderHistoryThumb(replay.finalGrid)}
+      <div class="history-card-info">
+        <div class="history-card-date">${safeName} · 收藏於 ${formatHistoryDate(Date.parse(item.savedAt))}</div>
+        <div class="history-card-stats">分數 ${replay.score}　等級 ${replay.level}　消行 ${replay.lines}</div>
+      </div>
+      <div class="history-card-actions">
+        <button class="btn history-card-btn" type="button" data-saved-replay-id="${item.id}" aria-label="播放收藏回放 ${safeName}">回放</button>
+        <button class="btn history-card-btn" type="button" data-delete-replay-id="${item.id}" aria-label="刪除收藏回放 ${safeName}">刪除</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderHistoryPanel(){
+  const listEl=document.getElementById('history-list');
+  if(!listEl) return;
+  const showingSaved=historyLibraryMode==='saved';
+  const recentTab=document.getElementById('history-recent-tab');
+  const savedTab=document.getElementById('history-saved-tab');
+  recentTab.classList.toggle('active',!showingSaved);
+  recentTab.setAttribute('aria-pressed',showingSaved?'false':'true');
+  savedTab.classList.toggle('active',showingSaved);
+  savedTab.setAttribute('aria-pressed',showingSaved?'true':'false');
+  savedTab.textContent=`已收藏 (${savedReplays.length})`;
+  document.getElementById('history-clear-btn').hidden=showingSaved;
+  if(showingSaved) renderSavedReplayList(listEl); else renderRecentHistoryList(listEl);
+  if(savedReplayLoadNotice && !document.getElementById('history-notice').textContent){
+    setReplayLibraryNotice(savedReplayLoadNotice,true);
+  }
+}
+function saveRecentReplay(entryIdx){
+  try{
+    const entry=history[entryIdx];
+    assertReplayData(entry && Array.isArray(entry.moves), '這筆紀錄沒有可收藏的回放');
+    const replay=normalizeReplayData(entry);
+    const id=replayContentId(replay);
+    const existing=savedReplays.find(item=>item.id===id);
+    if(existing){
+      assertReplayData(canonicalReplayText(existing.replay)===canonicalReplayText(replay), `收藏 ID ${id} 內容衝突`);
+      setReplayLibraryNotice('這筆回放已經收藏。',false);
+      return;
+    }
+    const item={
+      id, savedAt:new Date().toISOString(),
+      name:`分數 ${replay.score} · ${formatHistoryDate(replay.ts)}`,
+      replay,
+    };
+    persistSavedReplays([item].concat(savedReplays));
+    savedReplayLoadNotice='';
+    renderHistoryPanel();
+    setReplayLibraryNotice('已收藏回放，可在「已收藏」中播放或匯出。',false);
+  }catch(e){
+    setReplayLibraryNotice('無法收藏：'+e.message,true);
+  }
+}
+function deleteSavedReplay(id){
+  const item=savedReplays.find(candidate=>candidate.id===id);
+  if(!item) return;
+  if(!confirm(`確定要刪除「${item.name}」嗎？`)) return;
+  try{
+    persistSavedReplays(savedReplays.filter(candidate=>candidate.id!==id));
+    renderHistoryPanel();
+    setReplayLibraryNotice('已刪除收藏回放。',false);
+  }catch(e){
+    setReplayLibraryNotice('無法刪除：'+e.message,true);
+  }
+}
+function exportSavedReplayFile(){
+  if(savedReplays.length===0){
+    setReplayLibraryNotice('目前沒有可匯出的收藏回放。',true);
+    return;
+  }
+  const serialized=JSON.stringify(makeSavedReplayEnvelope(savedReplays),null,2);
+  const blob=new Blob([serialized],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const stamp=new Date().toISOString().replace(/[-:]/g,'').replace(/\..+$/,'').replace('T','-');
+  const link=document.createElement('a');
+  link.href=url;
+  link.download=`block-puzzle-${stamp}.bpz-replays.json`;
+  document.body.appendChild(link); link.click(); link.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),0);
+  setReplayLibraryNotice(`已匯出 ${savedReplays.length} 筆收藏回放。`,false);
+}
+function mergeImportedSavedReplays(importedItems){
+  const merged=savedReplays.slice();
+  const byId=new Map(merged.map(item=>[item.id,item]));
+  let added=0, skipped=0;
+  importedItems.forEach(item=>{
+    const existing=byId.get(item.id);
+    if(existing){
+      assertReplayData(canonicalReplayText(existing.replay)===canonicalReplayText(item.replay), `收藏 ID ${item.id} 內容衝突`);
+      skipped++; return;
+    }
+    merged.push(item); byId.set(item.id,item); added++;
+  });
+  assertReplayData(merged.length<=MAX_SAVED_REPLAYS, `合併後超過 ${MAX_SAVED_REPLAYS} 筆，請先刪除部分收藏`);
+  persistSavedReplays(merged);
+  return {added,skipped};
+}
+async function importSavedReplayFile(file){
+  if(!file) return;
+  try{
+    let parsed;
+    try{ parsed=JSON.parse(await file.text()); }
+    catch(e){ throw replayDataError('檔案不是有效的 JSON'); }
+    const imported=validateSavedReplayEnvelope(parsed).replays;
+    const result=mergeImportedSavedReplays(imported);
+    savedReplayLoadNotice='';
+    historyLibraryMode='saved';
+    renderHistoryPanel();
+    setReplayLibraryNotice(`匯入完成：新增 ${result.added} 筆，略過重複 ${result.skipped} 筆。`,false);
+  }catch(e){
+    setReplayLibraryNotice('匯入失敗：'+e.message+'；原有收藏未變更。',true);
+  }
 }
 function initHistoryPanel(){
   const listEl=document.getElementById('history-list');
   if(!listEl) return;
   listEl.addEventListener('click', e=>{
+    const saveBtn=e.target.closest('[data-save-replay-idx]');
+    if(saveBtn && !saveBtn.disabled){ sfxClick(); saveRecentReplay(+saveBtn.dataset.saveReplayIdx); return; }
+    const savedBtn=e.target.closest('[data-saved-replay-id]');
+    if(savedBtn){ sfxClick(); openSavedReplay(savedBtn.dataset.savedReplayId); return; }
+    const deleteBtn=e.target.closest('[data-delete-replay-id]');
+    if(deleteBtn){ sfxClick(); deleteSavedReplay(deleteBtn.dataset.deleteReplayId); return; }
     const btn = e.target.closest('[data-replay-idx]');
     if(!btn || btn.disabled) return;
     sfxClick();
     openReplay(+btn.dataset.replayIdx);
+  });
+  document.getElementById('history-recent-tab').addEventListener('click',()=>{
+    sfxClick(); historyLibraryMode='recent'; setReplayLibraryNotice('',false); renderHistoryPanel();
+  });
+  document.getElementById('history-saved-tab').addEventListener('click',()=>{
+    sfxClick(); historyLibraryMode='saved'; setReplayLibraryNotice('',false); renderHistoryPanel();
+  });
+  document.getElementById('history-export-btn').addEventListener('click',()=>{ sfxClick(); exportSavedReplayFile(); });
+  const importInput=document.getElementById('history-import-input');
+  document.getElementById('history-import-btn').addEventListener('click',()=>{ sfxClick(); importInput.click(); });
+  importInput.addEventListener('change',async()=>{
+    const file=importInput.files && importInput.files[0];
+    await importSavedReplayFile(file);
+    importInput.value='';
   });
   document.getElementById('history-clear-btn').addEventListener('click', ()=>{
     sfxClick();
@@ -2382,9 +2735,10 @@ function applyReplayMove(g, move){
     for(let c=0;c<shape[r].length;c++)
       if(shape[r][c]) g[move.r+r][move.col+c]=color;
   const {fr,fc}=findFullLines(g);
+  const obsCleared=(fr.length||fc.length) ? countObsInLines(fr,fc,g) : 0;
   eraseLines(fr,fc,g);
   (move.obs||[]).forEach(([r,c])=>{ g[r][c]=OBS; });
-  return {fr,fc};
+  return {fr,fc,obsCleared};
 }
 function computeReplayGridAtStep(entry, stepIdx){
   const g = decodeGrid(entry.initialGrid);
@@ -2522,6 +2876,14 @@ function setReplaySpeed(sp){
 function openReplay(entryIdx){
   const entry = history[entryIdx];
   if(!entry || !entry.moves) return; // 局過長（moves 為 null）不提供回放
+  openReplayEntry(entry);
+}
+function openSavedReplay(id){
+  const item=savedReplays.find(candidate=>candidate.id===id);
+  if(!item) return;
+  openReplayEntry(item.replay);
+}
+function openReplayEntry(entry){
   stopReplayPlaying();
   replayEntry = entry;
   replayStep = 0;
