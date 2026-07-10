@@ -846,14 +846,18 @@
   function defaultServerBase(currentHref) {
     const url = new URL(currentHref);
     const isLoopback = url.hostname === 'localhost' || url.hostname === '127.0.0.1' || url.hostname === '[::1]';
-    if (isLoopback && url.port === '8765') url.port = '8787';
+    if (isLoopback) url.port = '8787';
+    if (url.hostname === 'mitsabkpuz.vercel.app') return 'https://block-puzzle-multiplayer.xingencai060.workers.dev';
     return url.origin;
   }
 
+  function resolveServerBase(currentHref, search) {
+    const configured = new URLSearchParams(search).get('mpServer');
+    return configured ? new URL(configured, currentHref).toString() : defaultServerBase(currentHref);
+  }
+
   function socketUrl(code) {
-    const configured = new URLSearchParams(location.search).get('mpServer');
-    const base = configured ? new URL(configured, location.href).toString() : defaultServerBase(location.href);
-    return buildSocketUrl(base, code);
+    return buildSocketUrl(resolveServerBase(location.href, location.search), code);
   }
 
   function envelope(type, payload, commandId) {
@@ -1573,6 +1577,14 @@
     adapter = gameAdapter;
     $('play-area-solo').addEventListener('click', enterSoloArea);
     $('play-area-multiplayer').addEventListener('click', enterMultiplayerArea);
+    // 大廳改為 modal 後的關閉途徑：關閉鈕／點遮罩／Esc → 離開多人回單人（enterSoloArea 在對戰中會自行拒絕）。
+    $('mp-panel-close').addEventListener('click', enterSoloArea);
+    $('mp-panel').addEventListener('click', event => { if (event.target === $('mp-panel')) enterSoloArea(); });
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || $('mp-panel').hidden) return;
+      if (document.body.classList.contains('mp-active') || !$('mp-achievements-overlay').hidden) return;
+      enterSoloArea();
+    });
     $('mp-mode').addEventListener('change', selectMode);
     $('mp-create-btn').addEventListener('click', () => startConnection('create'));
     $('mp-join-btn').addEventListener('click', () => startConnection('join'));
@@ -1708,7 +1720,10 @@
       ACHIEVEMENTS.length === 7 && ACHIEVEMENTS.some(achievement => achievement.id === 'knockout') &&
       isLobbyRollback({status:'lobby',matchId:null}) &&
       defaultServerBase('http://localhost:8765/') === 'http://localhost:8787' &&
-      defaultServerBase('http://127.0.0.1:8765/') === 'http://127.0.0.1:8787' &&
+      defaultServerBase('http://127.0.0.1:8000/') === 'http://127.0.0.1:8787' &&
+      defaultServerBase('http://[::1]:3000/') === 'http://[::1]:8787' &&
+      defaultServerBase('https://mitsabkpuz.vercel.app/play') === 'https://block-puzzle-multiplayer.xingencai060.workers.dev' &&
+      resolveServerBase('https://mitsabkpuz.vercel.app/', '?mpServer=https%3A%2F%2Foverride.example%2Fws') === 'https://override.example/ws' &&
       defaultServerBase('https://game.example/') === 'https://game.example' &&
       buildSocketUrl('http://127.0.0.1:8787/base/', 'ROOM1') === 'ws://127.0.0.1:8787/base/room/ROOM1';
   }

@@ -1,16 +1,16 @@
 # Loop State — My Project
 
-Last run: 2026-07-10 — 多人歷史分層保存與 fresh-context verification 完成（worktree）
+Last run: 2026-07-10 — Production 多人負載測試完成：500 clients gameplay PASS、graceful close FAIL
 
 ## High Priority (loop is acting or waiting on human)
 
-- 無阻斷項目；依安全規則等待 human 決定是否 commit／merge／push。
+- Production gameplay 無阻斷；高負載發現 500/500 sockets 無法完成正常 close handshake，等待 human 決定是否修正。Git push 仍待 human 明示。
 
 ## Watch List
 
 - 保持現有單人 new/resume/history/replay 流程。
 - Multiplayer MVP 是 casual trust；公開排名／獎勵前需要 server-side rules validation。
-- 修改只存在 `/private/tmp/block-puzzle-multiplayer` 的 `codex/multiplayer-implementation` branch worktree。
+- 本輪 endpoint v20 修改位於 `/private/tmp/block-puzzle-multiplayer` 的 `codex/multiplayer-implementation` branch；production 已部署，Git push 待 human 明示。
 
 ## Recent Noise (ignored this run)
 
@@ -43,3 +43,16 @@ Run log:
 - 歷史 UX：多人戰績新增「歷史」入口，成就／歷史 ARIA tabs、勝負／模式／比分／原因 cards、單筆刪除／清除、雙棋盤播放與返回；v17 app shell。
 - 歷史驗證：真實完成一局→保存→播放→返回→reload 持久化、390px 無水平溢出、keyboard tabs／focus、console、client self-test、inline parse、Worker tests 24/24、diff check；兩輪 verifier findings 修正後 final PASS。
 - 分層驗證：v1→v2 migration、10 筆 8 full／2 result-only、50 cap、UTF-8／Quota downgrade-first、duplicate restore full、深層損壞自動降級、reload、result-only disabled UI、v19、24/24 tests 與 fresh-context verifier final PASS。
+- Vercel 根因：`.vercelignore` 是 allowlist 但未包含 `!multiplayer.js`，production HTML 因此載入 404，導致多人 tab 沒有 click handler 且 Service Worker install 失敗。
+- Vercel 修正：allowlist 加入 `!multiplayer.js`；CLI dry-run 與 preview deployment 均包含 8 個檔案及 `multiplayer.js`，syntax、inline parse、Worker tests 24/24、diff check 與 fresh-context verifier 全數 PASS。
+- Production 部署：deployment `dpl_249PGzWvq1xWn7d9KmxfXkTc4r3V` 已 alias 至 `https://mitsabkpuz.vercel.app`；首頁、`multiplayer.js`、`sw.js` 均回 200。
+- Production 手機驗證：Browser 390×844 可由單人切換到多人 tab，tabpanel 正常顯示、無水平溢出且 console logs 為空。
+- Production 連線重現：Chrome 建立房間後由「正在連線」轉為「連線中斷，15 秒內同頁重連」。
+- WebSocket 根因：非 localhost 預設連同源 `wss://mitsabkpuz.vercel.app/room/*`，但 Vercel 沒有 `/room` backend；repo 內 Worker 必須另行部署。
+- Cloudflare deployment：Worker version `bdc775e0-403e-4ccc-bf8b-7139b8b4db9f` 已部署至 `block-puzzle-multiplayer.xingencai060.workers.dev`，Durable Object binding 生效。
+- 公開 Worker 驗證：兩個 Chrome clients 已完成 create／join／Ready／countdown／playing，雙方 console 無 error；24/24 Worker tests PASS。
+- Vercel v20 deployment `dpl_A16NTANomgLYPRDKmBjaoPwgrTqE` 已 alias 至 `https://mitsabkpuz.vercel.app`；production HTML 載入 v20 script，SW cache 亦為 v20。
+- Production 最終驗證：不帶 `mpServer` 的兩個 Chrome clients 完成 create／join／Ready／countdown／playing，雙方 console 無 error；fresh-context verifier final PASS。
+- 負載 ramp：2／25／100 房 gameplay 全數成功；首輪 250 房為 248/250，2 個 host 等待 `match_result` 超過 20 秒（0.8%），無 handshake failure 或 HTTP 5xx。
+- 嚴格 peak：實際同時 500 sockets；250/250 房、500/500 clients 完成至雙方 `match_result`，p95 connect／join／start／result 為 1349／110／111／84 ms，耗時 12.83 秒。
+- 負載 finding：client `close(1000)` 後 500/500 sockets 在 5 秒內未收到正常 close event，強制終止後皆為 1006；v2 harness 與 raw metrics 經 fresh-context verifier PASS。
