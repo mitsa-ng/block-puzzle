@@ -630,6 +630,201 @@
     .replay-speed-btn { padding:6px 10px; min-height:32px; font-size:12px; }
     .replay-speed-btn.active { border-color:#9B7BFF; color:#F1EEFB; }
 
+    /* Game-area switch keeps solo play and multiplayer setup visually separate. */
+    .play-area-switch {
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px;
+      width:100%; max-width:420px; margin:0 0 14px; padding:5px;
+      background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-md);
+      box-shadow:var(--shadow-sm);
+    }
+    .play-area-tab {
+      display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px;
+      min-height:52px; padding:7px 12px; border:0; border-radius:calc(var(--radius-md) - 4px);
+      background:transparent; color:var(--text-muted); font:inherit; cursor:pointer;
+      transition:background-color 180ms ease,color 180ms ease,transform 150ms ease,box-shadow 180ms ease;
+    }
+    .play-area-tab:active { transform:scale(.98); }
+    .play-area-tab[aria-selected="true"] {
+      color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent-2));
+      box-shadow:0 5px 14px color-mix(in srgb,var(--accent) 26%,transparent);
+    }
+    .play-area-label { font-size:14px; font-weight:700; }
+    .play-area-note { font-size:10px; opacity:.82; letter-spacing:.4px; }
+    .multiplayer-panel {
+      width:100%; max-width:420px; margin:0 0 14px; padding:16px;
+      background:linear-gradient(145deg,color-mix(in srgb,var(--surface) 96%,var(--accent) 4%),var(--surface));
+      border:1px solid color-mix(in srgb,var(--border) 72%,var(--accent) 28%); border-radius:var(--radius-lg);
+      box-shadow:var(--shadow-md); animation:mp-panel-in 220ms ease both;
+    }
+    .multiplayer-panel[hidden] { display:none; }
+    @keyframes mp-panel-in { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
+    .mp-panel-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    .mp-kicker { display:block; margin-bottom:2px; font-size:10px; font-weight:700; color:var(--accent); letter-spacing:1.2px; }
+    .mp-panel-title { font-family:'Baloo 2','Noto Sans TC',sans-serif; font-size:20px; line-height:1.2; }
+    .mp-private-badge {
+      flex:0 0 auto; padding:5px 8px; border-radius:var(--radius-full);
+      background:color-mix(in srgb,var(--accent) 13%,transparent); color:var(--accent);
+      font-size:10px; font-weight:700; letter-spacing:.4px;
+    }
+    .mp-row { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+    .mp-row + .mp-row { margin-top:8px; }
+    .mp-control { display:flex; flex:1 1 150px; min-width:0; flex-direction:column; gap:5px; }
+    .mp-control-label { font-size:10px; font-weight:700; color:var(--text-muted); letter-spacing:.7px; }
+    .mp-field {
+      flex:1 1 120px; min-width:0; min-height:44px; padding:9px 11px;
+      border:1px solid var(--border); border-radius:var(--radius-sm);
+      background:var(--surface-2); color:var(--text); font:inherit; user-select:text; -webkit-user-select:text;
+    }
+    .mp-control .mp-field { width:100%; flex:none; }
+    .mp-field::placeholder { color:var(--text-muted); }
+    .mp-small-btn { padding:9px 12px; min-height:44px; }
+    .mp-status { min-height:20px; font-size:12px; color:var(--text-muted); line-height:20px; }
+    .mp-status[data-tone="error"] { color:var(--danger); }
+    .mp-status[data-tone="ok"] { color:var(--success); }
+    .mp-copy-btn { min-width:54px; }
+    .mp-copy-btn.copied { border-color:var(--success); color:var(--success); }
+    .mp-roster {
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:8px; margin-top:12px;
+    }
+    .mp-roster[hidden] { display:none; }
+    .mp-player-card {
+      display:flex; align-items:center; gap:9px; min-width:0; padding:10px;
+      border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2);
+      transition:border-color 180ms ease,background-color 180ms ease,transform 180ms ease;
+    }
+    .mp-player-card.is-ready { border-color:color-mix(in srgb,var(--success) 64%,var(--border)); background:color-mix(in srgb,var(--success) 8%,var(--surface-2)); }
+    .mp-player-avatar {
+      display:grid; place-items:center; flex:0 0 34px; width:34px; height:34px; border-radius:11px;
+      color:#fff; background:linear-gradient(135deg,var(--accent),var(--accent-2)); font-size:11px; font-weight:800;
+    }
+    .mp-player-card:last-child .mp-player-avatar { background:linear-gradient(135deg,#38BDF8,#14B8A6); }
+    .mp-player-copy { min-width:0; }
+    .mp-player-name { display:block; overflow:hidden; color:var(--text); font-size:12px; font-weight:700; text-overflow:ellipsis; white-space:nowrap; }
+    .mp-player-state { display:flex; align-items:center; gap:5px; margin-top:2px; color:var(--text-muted); font-size:10px; }
+    .mp-player-state::before { content:''; width:6px; height:6px; border-radius:50%; background:var(--text-muted); }
+    .mp-player-card.is-ready .mp-player-state { color:var(--success); }
+    .mp-player-card.is-ready .mp-player-state::before { background:var(--success); box-shadow:0 0 0 4px color-mix(in srgb,var(--success) 14%,transparent); }
+    .mp-achievement-preview {
+      display:flex; align-items:center; justify-content:space-between; gap:12px; margin-top:10px; padding:10px 11px;
+      border:1px solid color-mix(in srgb,var(--accent) 26%,var(--border)); border-radius:var(--radius-sm);
+      background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 8%,var(--surface-2)),var(--surface-2));
+    }
+    .mp-achievement-kicker { display:block; color:var(--text-muted); font-size:9px; font-weight:700; letter-spacing:.8px; }
+    .mp-achievement-summary { display:block; margin-top:2px; color:var(--text); font-size:12px; font-weight:700; }
+    .mp-achievement-btn { flex:0 0 auto; min-height:44px; padding:8px 11px; }
+    .mp-achievement-actions { display:flex; flex:0 0 auto; gap:7px; flex-wrap:wrap; justify-content:flex-end; }
+    .mp-hud {
+      display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;
+      width:100%; max-width:420px; margin-bottom:10px;
+    }
+    .mp-hud[hidden] { display:none; }
+    .mp-hud-card { padding:8px; text-align:center; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-sm); }
+    .mp-hud-label { display:block; font-size:9px; color:var(--text-muted); letter-spacing:.7px; }
+    .mp-hud-value { display:block; margin-top:2px; font-family:'Baloo 2',sans-serif; font-size:16px; font-weight:700; }
+    .mp-hud-delta { display:block; min-height:14px; margin-top:1px; color:var(--text-muted); font-size:9px; font-weight:700; }
+    .mp-hud-delta.ahead { color:var(--success); }
+    .mp-hud-delta.behind { color:var(--danger); }
+    .mp-hud-delta.pulse { animation:mp-score-pulse 360ms ease; }
+    @keyframes mp-score-pulse { 50% { transform:scale(1.08); } }
+    body.mp-input-locked #board, body.mp-input-locked #pieces-area { pointer-events:none; opacity:.65; }
+    body.mp-active #undo-btn { display:none; }
+    button:focus-visible, .mp-field:focus-visible { outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent); outline-offset:2px; }
+    #mp-result-overlay {
+      position:fixed; inset:0; z-index:2100; display:none; overflow:auto;
+      background:color-mix(in srgb,var(--bg) 94%,transparent); padding:max(24px,env(safe-area-inset-top)) 12px max(24px,env(safe-area-inset-bottom));
+    }
+    #mp-result-overlay.show { display:block; }
+    #mp-result-overlay .replay-ctrl-btn, #mp-result-overlay .replay-speed-btn { min-height:44px; }
+    .mp-result-panel { width:min(760px,100%); margin:auto; padding:18px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-lg); box-shadow:var(--shadow-lg); }
+    .mp-result-title { font-family:'Baloo 2',sans-serif; font-size:28px; font-weight:800; text-align:center; }
+    .mp-result-scores { text-align:center; color:var(--text-muted); margin:4px 0 14px; }
+    .mp-result-meta { margin:-7px 0 14px; text-align:center; color:var(--accent); font-size:12px; font-weight:700; }
+    .mp-new-achievements { display:flex; justify-content:center; gap:7px; flex-wrap:wrap; margin:0 0 14px; }
+    .mp-new-achievements[hidden] { display:none; }
+    .mp-unlock-chip { padding:6px 9px; border:1px solid color-mix(in srgb,var(--accent-2) 40%,var(--border)); border-radius:var(--radius-full); background:color-mix(in srgb,var(--accent-2) 10%,var(--surface-2)); color:var(--text); font-size:11px; font-weight:700; }
+    .mp-replay-boards { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+    .mp-replay-player { min-width:0; text-align:center; }
+    .mp-replay-name { font-size:13px; font-weight:700; margin-bottom:6px; }
+    .mp-replay-board {
+      --mp-replay-cell:min(4.2vw,27px); display:grid; grid-template-columns:repeat(9,var(--mp-replay-cell)); gap:2px;
+      width:max-content; max-width:100%; margin:auto; padding:7px; background:var(--board-bg); border-radius:var(--radius-sm);
+    }
+    .mp-replay-board .cell { width:var(--mp-replay-cell); height:var(--mp-replay-cell); border-radius:4px; }
+    #mp-achievements-overlay {
+      position:fixed; inset:0; z-index:2200; display:grid; place-items:center; overflow:auto; padding:20px 12px;
+      background:color-mix(in srgb,var(--bg) 88%,transparent); backdrop-filter:blur(8px);
+    }
+    #mp-achievements-overlay[hidden] { display:none; }
+    .mp-achievements-panel {
+      width:min(560px,100%); max-height:min(720px,90vh); overflow:auto; overscroll-behavior:contain; padding:18px;
+      border:1px solid var(--border); border-radius:var(--radius-lg); background:var(--surface); box-shadow:var(--shadow-lg);
+      animation:mp-achievements-in 220ms ease both;
+    }
+    @keyframes mp-achievements-in { from { opacity:0; transform:translateY(10px) scale(.98); } to { opacity:1; transform:none; } }
+    .mp-achievements-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+    .mp-achievements-title { font-family:'Baloo 2','Noto Sans TC',sans-serif; font-size:24px; line-height:1.15; }
+    .mp-achievements-subtitle { margin-top:3px; color:var(--text-muted); font-size:12px; }
+    .mp-icon-btn { width:44px; height:44px; padding:0; font-size:22px; line-height:1; }
+    .mp-achievements-tabs {
+      display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:6px; margin:15px 0;
+      padding:4px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2);
+    }
+    .mp-achievements-tab { min-height:44px; border-color:transparent; background:transparent; }
+    .mp-achievements-tab[aria-selected="true"] { border-color:color-mix(in srgb,var(--accent) 45%,var(--border)); background:var(--surface); color:var(--accent); }
+    .mp-achievements-tabpanel[hidden] { display:none; }
+    .mp-career-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; margin:15px 0; }
+    .mp-career-stat { padding:10px 8px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2); text-align:center; }
+    .mp-career-value { display:block; color:var(--accent); font-family:'Baloo 2',sans-serif; font-size:20px; font-weight:800; }
+    .mp-career-label { display:block; color:var(--text-muted); font-size:9px; letter-spacing:.6px; }
+    .mp-achievement-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:9px; }
+    .mp-achievement-card { display:grid; grid-template-columns:38px 1fr; gap:10px; min-width:0; padding:11px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2); }
+    .mp-achievement-card.locked { opacity:.52; filter:saturate(.35); }
+    .mp-achievement-icon { display:grid; place-items:center; width:38px; height:38px; border-radius:12px; background:color-mix(in srgb,var(--accent) 14%,var(--surface)); font-size:20px; }
+    .mp-achievement-card.unlocked .mp-achievement-icon { box-shadow:0 0 0 1px color-mix(in srgb,var(--accent) 55%,transparent),0 6px 18px color-mix(in srgb,var(--accent) 18%,transparent); }
+    .mp-achievement-name { display:block; color:var(--text); font-size:12px; font-weight:800; }
+    .mp-achievement-desc { display:block; margin-top:2px; color:var(--text-muted); font-size:10px; line-height:1.4; }
+    .mp-history-toolbar { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:10px; }
+    .mp-history-limit { min-width:0; color:var(--text-muted); font-size:11px; line-height:1.45; }
+    .mp-history-clear, .mp-history-action { min-height:44px; }
+    .mp-history-list { display:grid; gap:9px; }
+    .mp-history-empty { padding:28px 16px; border:1px dashed var(--border); border-radius:var(--radius-sm); color:var(--text-muted); text-align:center; font-size:12px; line-height:1.6; }
+    .mp-history-card {
+      display:grid; grid-template-columns:minmax(0,1fr) auto; align-items:center; gap:12px; min-width:0; padding:12px;
+      border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--surface-2);
+    }
+    .mp-history-summary { min-width:0; }
+    .mp-history-heading { display:flex; align-items:center; gap:6px; min-width:0; flex-wrap:wrap; }
+    .mp-history-outcome, .mp-history-mode { padding:3px 7px; border-radius:var(--radius-full); font-size:10px; font-weight:800; }
+    .mp-history-outcome.win { background:color-mix(in srgb,var(--success) 16%,var(--surface)); color:var(--success); }
+    .mp-history-outcome.loss { background:color-mix(in srgb,var(--danger) 14%,var(--surface)); color:var(--danger); }
+    .mp-history-outcome.draw { background:color-mix(in srgb,var(--text-muted) 14%,var(--surface)); color:var(--text-muted); }
+    .mp-history-mode { background:color-mix(in srgb,var(--accent) 12%,var(--surface)); color:var(--accent); }
+    .mp-history-date { margin-left:auto; color:var(--text-muted); font-size:10px; }
+    .mp-history-scoreline { overflow-wrap:anywhere; margin-top:8px; color:var(--text); font-size:13px; font-weight:800; }
+    .mp-history-reason { margin-top:3px; color:var(--text-muted); font-size:10px; }
+    .mp-history-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
+    .mp-history-status { min-height:18px; margin-top:9px; color:var(--danger); font-size:11px; }
+    #mp-achievement-toast {
+      position:fixed; left:50%; bottom:max(24px,env(safe-area-inset-bottom)); z-index:2300;
+      display:flex; align-items:center; gap:9px; max-width:calc(100vw - 24px); padding:10px 14px;
+      border:1px solid color-mix(in srgb,var(--accent-2) 48%,var(--border)); border-radius:var(--radius-full);
+      background:var(--surface); box-shadow:var(--shadow-lg); color:var(--text); font-size:12px; font-weight:700;
+      opacity:0; pointer-events:none; transform:translate(-50%,16px); transition:opacity 180ms ease,transform 180ms ease;
+    }
+    #mp-achievement-toast.show { opacity:1; transform:translate(-50%,0); }
+    @media (max-width:560px) {
+      .mp-replay-boards { grid-template-columns:1fr; }
+      .mp-replay-board { --mp-replay-cell:min(8vw,32px); }
+      .mp-achievement-grid { grid-template-columns:1fr; }
+      .mp-achievement-preview { align-items:flex-start; flex-direction:column; }
+      .mp-achievement-actions { width:100%; justify-content:stretch; }
+      .mp-achievement-actions .btn { flex:1 1 0; }
+      .mp-history-card { grid-template-columns:1fr; }
+      .mp-history-actions { justify-content:stretch; }
+      .mp-history-action { flex:1 1 0; }
+      .mp-history-date { width:100%; margin-left:0; }
+    }
+
     @media (max-width: 430px) { :root{--cell:36px;} .piece-slot{width:100px;} }
     @media (max-width: 360px) { :root{--cell:32px;} .pieces-area{gap:8px;} .piece-slot{width:90px;} }
 
@@ -667,6 +862,60 @@
   </button>
   <div class="title">Block Puzzle</div>
   <div class="subtitle">方塊消除挑戰</div>
+
+  <nav class="play-area-switch" role="tablist" aria-label="遊戲區域">
+    <button class="play-area-tab" id="play-area-solo" type="button" role="tab" aria-selected="true">
+      <span class="play-area-label">單人遊戲</span>
+      <span class="play-area-note">經典闖關</span>
+    </button>
+    <button class="play-area-tab" id="play-area-multiplayer" type="button" role="tab" aria-selected="false" aria-controls="mp-panel">
+      <span class="play-area-label">多人對戰</span>
+      <span class="play-area-note">私人房 1v1</span>
+    </button>
+  </nav>
+
+  <section class="multiplayer-panel" id="mp-panel" role="tabpanel" aria-labelledby="play-area-multiplayer" hidden>
+    <header class="mp-panel-heading">
+      <div><span class="mp-kicker">MULTIPLAYER</span><h2 class="mp-panel-title">建立或加入對戰</h2></div>
+      <span class="mp-private-badge">私人房</span>
+    </header>
+    <div class="mp-row">
+      <label class="mp-control"><span class="mp-control-label">對戰模式</span>
+        <select class="mp-field" id="mp-mode" aria-label="對戰模式">
+          <option value="score">比分快賽</option>
+          <option value="attack">障礙對戰</option>
+        </select>
+      </label>
+      <label class="mp-control"><span class="mp-control-label">玩家暱稱</span>
+        <input class="mp-field" id="mp-name" maxlength="16" autocomplete="nickname" placeholder="輸入暱稱" aria-label="玩家暱稱">
+      </label>
+    </div>
+    <div class="mp-row" id="mp-room-controls">
+      <input class="mp-field" id="mp-room-code" maxlength="12" inputmode="text" autocomplete="off" placeholder="房間代碼" aria-label="房間代碼">
+      <button class="btn mp-small-btn mp-copy-btn" id="mp-copy-room-btn" type="button" disabled>複製</button>
+      <button class="btn mp-small-btn" id="mp-create-btn" type="button">建立</button>
+      <button class="btn mp-small-btn" id="mp-join-btn" type="button">加入</button>
+      <button class="btn primary mp-small-btn" id="mp-ready-btn" type="button" disabled>Ready</button>
+    </div>
+    <div class="mp-status" id="mp-status" role="status" aria-live="polite">比分快賽：180 秒比總分</div>
+    <div class="mp-roster" id="mp-roster" hidden aria-label="房間玩家">
+      <article class="mp-player-card" id="mp-player-self"><span class="mp-player-avatar">我</span><span class="mp-player-copy"><span class="mp-player-name" id="mp-player-self-name">你</span><span class="mp-player-state" id="mp-player-self-state">尚未 Ready</span></span></article>
+      <article class="mp-player-card" id="mp-player-opponent"><span class="mp-player-avatar">對</span><span class="mp-player-copy"><span class="mp-player-name" id="mp-player-opponent-name">等待對手</span><span class="mp-player-state" id="mp-player-opponent-state">尚未加入</span></span></article>
+    </div>
+    <div class="mp-achievement-preview">
+      <div><span class="mp-achievement-kicker">多人戰績</span><span class="mp-achievement-summary" id="mp-achievement-summary">0 場 · 0 勝 · 連勝 0</span></div>
+      <div class="mp-achievement-actions">
+        <button class="btn mp-achievement-btn" id="mp-achievement-open" type="button">成就 <span id="mp-achievement-count">0/7</span></button>
+        <button class="btn mp-achievement-btn" id="mp-history-open" type="button">歷史 <span id="mp-history-count">0</span></button>
+      </div>
+    </div>
+  </section>
+
+  <div class="mp-hud" id="mp-hud" hidden aria-label="對戰狀態">
+    <div class="mp-hud-card"><span class="mp-hud-label">時間／連線</span><span class="mp-hud-value" id="mp-clock">--</span></div>
+    <div class="mp-hud-card"><span class="mp-hud-label">對手分數</span><span class="mp-hud-value" id="mp-opponent-score">0</span><span class="mp-hud-delta" id="mp-score-gap">等待開賽</span></div>
+    <div class="mp-hud-card"><span class="mp-hud-label">攻擊</span><span class="mp-hud-value" id="mp-attack-status">收 0／送 0</span></div>
+  </div>
 
   <div class="stats-row">
     <div class="stat-card"><div class="stat-label">分數</div><div class="stat-value" id="score-disp">0</div></div>
@@ -748,6 +997,64 @@
   </div>
 </div>
 
+<div id="mp-result-overlay" role="dialog" aria-modal="true" aria-labelledby="mp-result-title">
+  <div class="mp-result-panel">
+    <div class="mp-result-title" id="mp-result-title">對戰結果</div>
+    <div class="mp-result-scores" id="mp-result-scores"></div>
+    <div class="mp-result-meta" id="mp-result-meta"></div>
+    <div class="mp-new-achievements" id="mp-new-achievements" hidden></div>
+    <div class="mp-replay-boards" id="mp-replay-boards" hidden>
+      <div class="mp-replay-player"><div class="mp-replay-name" id="mp-replay-name-a"></div><div class="mp-replay-board" id="mp-replay-board-a"></div></div>
+      <div class="mp-replay-player"><div class="mp-replay-name" id="mp-replay-name-b"></div><div class="mp-replay-board" id="mp-replay-board-b"></div></div>
+    </div>
+    <div class="replay-status" id="mp-replay-status" role="status"></div>
+    <div class="replay-controls" id="mp-replay-controls" hidden>
+      <button class="btn replay-ctrl-btn" id="mp-replay-prev" type="button">上一步</button>
+      <button class="btn primary replay-ctrl-btn" id="mp-replay-play" type="button">播放</button>
+      <button class="btn replay-ctrl-btn" id="mp-replay-next" type="button">下一步</button>
+      <button class="btn replay-speed-btn active" type="button" data-mp-speed="1">1x</button>
+      <button class="btn replay-speed-btn" type="button" data-mp-speed="2">2x</button>
+      <button class="btn replay-speed-btn" type="button" data-mp-speed="4">4x</button>
+    </div>
+    <div class="replay-controls">
+      <button class="btn primary" id="mp-rematch-btn" type="button">再來一局</button>
+      <button class="btn" id="mp-replay-open" type="button" disabled>查看回放</button>
+      <button class="btn" id="mp-result-close" type="button">關閉</button>
+    </div>
+  </div>
+</div>
+
+<div id="mp-achievements-overlay" role="dialog" aria-modal="true" aria-labelledby="mp-achievements-title" hidden>
+  <section class="mp-achievements-panel">
+    <header class="mp-achievements-head">
+      <div><h2 class="mp-achievements-title" id="mp-achievements-title">多人對戰紀錄</h2><p class="mp-achievements-subtitle">成就與已驗證回放只保存在這台裝置上</p></div>
+      <button class="btn mp-icon-btn" id="mp-achievement-close" type="button" aria-label="關閉多人對戰紀錄">×</button>
+    </header>
+    <div class="mp-achievements-tabs" id="mp-achievements-tabs" role="tablist" aria-label="多人對戰紀錄分類">
+      <button class="btn mp-achievements-tab" id="mp-achievements-tab" type="button" role="tab" aria-selected="true" aria-controls="mp-achievements-panel" data-mp-tab="achievements">成就</button>
+      <button class="btn mp-achievements-tab" id="mp-history-tab" type="button" role="tab" aria-selected="false" aria-controls="mp-history-panel" data-mp-tab="history" tabindex="-1">歷史回放</button>
+    </div>
+    <div class="mp-achievements-tabpanel" id="mp-achievements-panel" role="tabpanel" aria-labelledby="mp-achievements-tab">
+      <div class="mp-career-stats">
+        <div class="mp-career-stat"><span class="mp-career-value" id="mp-career-matches">0</span><span class="mp-career-label">完成場次</span></div>
+        <div class="mp-career-stat"><span class="mp-career-value" id="mp-career-wins">0</span><span class="mp-career-label">累積勝場</span></div>
+        <div class="mp-career-stat"><span class="mp-career-value" id="mp-career-streak">0</span><span class="mp-career-label">最佳連勝</span></div>
+      </div>
+      <div class="mp-achievement-grid" id="mp-achievement-list"></div>
+    </div>
+    <div class="mp-achievements-tabpanel" id="mp-history-panel" role="tabpanel" aria-labelledby="mp-history-tab" hidden>
+      <div class="mp-history-toolbar">
+        <span class="mp-history-limit">最多 50 筆結果／最近 8 筆可回放；超過 3 MiB 時優先降級舊回放。</span>
+        <button class="btn mp-history-clear" id="mp-history-clear" type="button">清除全部</button>
+      </div>
+      <div class="mp-history-list" id="mp-history-list"></div>
+      <div class="mp-history-status" id="mp-history-status" role="status" aria-live="polite"></div>
+    </div>
+  </section>
+</div>
+<div id="mp-achievement-toast" role="status" aria-live="polite" aria-hidden="true"><span>🏆</span><span id="mp-achievement-toast-text">解鎖新成就</span></div>
+
+<script src="./multiplayer.js?v=19"></script>
 <script>
 'use strict';
 
@@ -1168,6 +1475,12 @@ function doUndo(){
 const randColor = () => COLORS[Math.floor(Math.random()*COLORS.length)];
 const randPiece = () => ({shape:PIECE_DEFS[Math.floor(Math.random()*PIECE_DEFS.length)], color:randColor()});
 const emptyGrid = () => Array.from({length:ROWS},()=>Array(COLS).fill(null));
+
+function multiplayerPieceSet(){
+  const defs=window.Multiplayer.nextPieceSet(PIECE_DEFS.length,COLORS.length);
+  if(!defs) return [randPiece(),randPiece(),randPiece()];
+  return defs.map(({d,c})=>({shape:PIECE_DEFS[d],color:COLORS[c]}));
+}
 
 // D-2：回放記錄用 — 把 piece.shape 反查回 PIECE_DEFS 的 index（存 d 供回放重建 shape，不存整個形狀陣列）。
 // 不可用 PIECE_DEFS.indexOf(piece.shape)：存檔重載後 pieces 是 JSON 深拷貝，陣列參照不再相同，
@@ -1965,9 +2278,23 @@ document.addEventListener('touchcancel', e=>{
 function doPlace(idx,sr,sc){
   const piece=pieces[idx];
   if(!piece||!canPlace(piece,sr,sc)) return false;
+  if(window.Multiplayer?.isMatchActive()){
+    if(window.Multiplayer.isInputLocked()) return false;
+    const d=findPieceDefIndex(piece.shape), c=COLORS.indexOf(piece.color);
+    if(d<0||c<0) return false;
+    return window.Multiplayer.requestMove({piece:{d,c},row:sr,col:sc}, ()=>doPlaceNow(idx,sr,sc));
+  }
+  return doPlaceNow(idx,sr,sc);
+}
+
+function doPlaceNow(idx,sr,sc){
+  const piece=pieces[idx];
+  if(!piece||!canPlace(piece,sr,sc)) return false;
+  const duel=!!window.Multiplayer?.isMatchActive();
+  const duelPieceSetIndex=duel?window.Multiplayer.getPieceSetIndex():0;
 
   // A-2：成功放置前先拍快照（單層 undo），下方任何 grid/pieces/score/level 變動都在此之後
-  takeUndoSnapshot();
+  if(!duel) takeUndoSnapshot();
 
   // 記錄本次放置涉及的座標（用於落地動畫，B4）
   const placedCoords=[];
@@ -1983,9 +2310,9 @@ function doPlace(idx,sr,sc){
   const total=fr.length+fc.length;
 
   // 成就：首次消行／單次雙消／單次三消（C-2），時機只需 total 確定即可判定
-  if(total>0) unlockAchievement('first_clear');
-  if(total>=2) unlockAchievement('double_clear');
-  if(total>=3) unlockAchievement('triple_clear');
+  if(!duel && total>0) unlockAchievement('first_clear');
+  if(!duel && total>=2) unlockAchievement('double_clear');
+  if(!duel && total>=3) unlockAchievement('triple_clear');
 
   // Count obstacle cells caught in cleared lines（必須在 eraseLines 之前計算）
   const obsCleared = total>0 ? countObsInLines(fr,fc) : 0;
@@ -2020,13 +2347,15 @@ function doPlace(idx,sr,sc){
     eraseLines(fr,fc);
 
     // 統計：累計消行數／單次最高消行（C-1）
-    stats.totalLines += total;
-    if(total > stats.maxCombo) stats.maxCombo = total;
+    if(!duel){
+      stats.totalLines += total;
+      if(total > stats.maxCombo) stats.maxCombo = total;
+    }
     gameLines += total; // D-1：本局累計消行數，供 game over 時寫入歷史紀錄
 
     // 成就：清空全盤（C-2）。判定時機必須在資料同步清除之後、且在下方升級可能生成新障礙物之前，
     // 否則升級補的障礙物會讓「全空」誤判為未達成。
-    if(grid.every(row=>row.every(v=>v===null))) unlockAchievement('clear_board');
+    if(!duel && grid.every(row=>row.every(v=>v===null))) unlockAchievement('clear_board');
 
     // 落地動畫：只套用在「不會被立刻消除」的格子上，避免與 clearing 動畫衝突（B4）
     placedCoords.forEach(([r,c])=>{
@@ -2053,13 +2382,13 @@ function doPlace(idx,sr,sc){
   if(streakBonus>0) score += streakBonus;
 
   // 統計／成就：最高連續 streak（C-1）／streak×5 成就（C-2）
-  if(streak > stats.maxStreak) stats.maxStreak = streak;
-  if(streak >= 5) unlockAchievement('streak5');
+  if(!duel && streak > stats.maxStreak) stats.maxStreak = streak;
+  if(!duel && streak >= 5) unlockAchievement('streak5');
   if(streak > gameMaxStreak) gameMaxStreak = streak; // D-1：本局最高 streak，供 game over 時寫入歷史紀錄
 
   // 成就：單局分數門檻（C-2），score 此時已含本次 pts 與 streakBonus
-  if(score >= 500)  unlockAchievement('score500');
-  if(score >= 1000) unlockAchievement('score1000');
+  if(!duel && score >= 500)  unlockAchievement('score500');
+  if(!duel && score >= 1000) unlockAchievement('score1000');
 
   // ── Level-up check：務必在「非動畫分支的 renderBoard」／postPlace()／isGameOver() 之前生成障礙物（A2）──
   const nl = Math.floor(score/100)+1;
@@ -2069,12 +2398,14 @@ function doPlace(idx,sr,sc){
     triggerLevelUpFlash();
     sfxLevelUp();
     // Spawn new obstacles for the new level (fill up to target count)
-    const target = obsCount(level);
-    const current = countObstacles();
-    if(target > current) newObsCoords = spawnObstacles(target - current);
+    if(!duel){
+      const target = obsCount(level);
+      const current = countObstacles();
+      if(target > current) newObsCoords = spawnObstacles(target - current);
+    }
   }
   // 成就：等級 5（C-2）。不限定「剛好升到」，重載後若已達等級 5 也該補判（累積型成就）
-  if(level >= 5) unlockAchievement('level5');
+  if(!duel && level >= 5) unlockAchievement('level5');
 
   // D-2：回放記錄 — 上限 500 步，超過停止記錄該局回放（歷史仍記分數與 final grid，見 recordHistoryEntry）。
   // d/c 用 index 引用 PIECE_DEFS/COLORS，不存整個形狀陣列；s 存放置後的累計分數（回放直接顯示，不重算）。
@@ -2106,8 +2437,10 @@ function doPlace(idx,sr,sc){
 
   const oldBest = best; // 記錄 updateStats() 覆寫 best 之前的舊值，供 B15 判斷是否剛破紀錄
   updateStats();
-  saveProg();
-  saveStats(); // C-1：totalLines/maxCombo/maxStreak 這幾格上面已就緒，這裡統一存檔
+  if(!duel){
+    saveProg();
+    saveStats(); // C-1：totalLines/maxCombo/maxStreak 這幾格上面已就緒，這裡統一存檔
+  }
 
   // 螢幕報讀：播報本次放置結果（C-3）
   announce(total>0 ? `消除 ${total} 行，得 ${pts} 分` : `放置成功，得 ${pts} 分`);
@@ -2136,7 +2469,7 @@ function doPlace(idx,sr,sc){
   }
 
   // 首次超越最高分的一次性 toast（B15）
-  if(!recordToastShown && oldBest>0 && score>oldBest){
+  if(!duel && !recordToastShown && oldBest>0 && score>oldBest){
     recordToastShown=true;
     showRecordToast();
   }
@@ -2151,17 +2484,31 @@ function doPlace(idx,sr,sc){
     pendingClearTimer = setTimeout(()=>{ renderBoard(); pendingClearTimer=null; },450);
   }
 
+  if(duel){
+    const d=findPieceDefIndex(piece.shape), c=COLORS.indexOf(piece.color);
+    window.Multiplayer.commitMove({
+      move:{d,c,r:sr,col:sc,s:score},
+      clearedRows:fr.slice(), clearedCols:fc.slice(), score, lines:gameLines,
+      obstacleCount:countObstacles(), pieceSetIndex:duelPieceSetIndex, board:encodeGrid(grid)
+    }).catch(()=>{});
+  }
+
   return true;
 }
 
 function postPlace(){
-  if(pieces.every(p=>!p)) pieces=rollFairPieceSet();
+  if(pieces.every(p=>!p)) pieces=window.Multiplayer?.isMatchActive() ? multiplayerPieceSet() : rollFairPieceSet();
   renderPieces();
   updateDangerState(); // B-2：每次放置/補牌後重算 totalMoves
   if(isGameOver()) showGameOver();
 }
 
 function showGameOver(fromResume){
+  if(window.Multiplayer?.isMatchActive()){
+    window.Multiplayer.reportGameOver({score,board:encodeGrid(grid)}).catch(()=>{});
+    setHint('你已無合法落子，等待對手結束',false);
+    return;
+  }
   saveProg();
   sfxGameOver();
   document.getElementById('final-score').textContent=score;
@@ -2201,6 +2548,58 @@ function newGame(){
   setHint(isTouchDevice()?'長按方塊開始拖動，或點一下選取':'點擊下方方塊來選取',false);
 }
 
+function startMultiplayerMatch(){
+  if(pendingClearTimer){ clearTimeout(pendingClearTimer); pendingClearTimer=null; }
+  grid=emptyGrid(); score=0; level=1; streak=0;
+  pieces=multiplayerPieceSet();
+  selIdx=null; recordToastShown=false; resetUndo();
+  moves=[]; gameLines=0; gameMaxStreak=0; initialGrid=deepCloneGrid(grid);
+  document.getElementById('game-over-overlay').classList.remove('show');
+  document.getElementById('mp-result-overlay').classList.remove('show');
+  hideGhost(); clearPreview(); renderBoard(); renderPieces(); updateStats(); renderObsPips(); updateDangerState();
+  setHint('等待倒數開始',false);
+}
+
+function cancelMultiplayerInteraction(){
+  selIdx=null; previewPos=null; touchDragIdx=null; touchDragActive=false; dragTouchId=null;
+  hideGhost(); clearPreview();
+  document.querySelectorAll('#board .cell').forEach(el=>el.classList.remove('can-select'));
+  document.querySelectorAll('.piece-slot.selected').forEach(el=>el.classList.remove('selected'));
+  renderPieces();
+}
+
+function multiplayerEmptyCells(){
+  const cells=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(!grid[r][c]) cells.push(r*COLS+c);
+  return cells;
+}
+
+function applyMultiplayerAttack(cells){
+  cancelMultiplayerInteraction();
+  if(!Array.isArray(cells)) return null;
+  const coords=cells.map(cell=>Number.isInteger(cell)?[Math.floor(cell/COLS),cell%COLS]:cell);
+  const seen=new Set();
+  const room=Math.max(0,MAX_OBS-countObstacles());
+  if(coords.length>room) return null;
+  for(const cell of coords){
+    if(!Array.isArray(cell)||cell.length!==2) return null;
+    const r=cell[0],c=cell[1],key=r+','+c;
+    if(!Number.isInteger(r)||!Number.isInteger(c)||r<0||r>=ROWS||c<0||c>=COLS||seen.has(key)||grid[r][c]) return null;
+    seen.add(key);
+  }
+  coords.forEach(([r,c])=>{ grid[r][c]=OBS; });
+  renderBoard(); renderObsPips(); updateDangerState();
+  const gameOver=isGameOver();
+  if(gameOver) setHint('障礙使棋盤無合法落子，等待結算',false);
+  else announce(`收到 ${coords.length} 格障礙`);
+  return {board:encodeGrid(grid),obstacleCount:countObstacles(),gameOver,score};
+}
+
+function restoreSoloGame(){
+  document.getElementById('game-over-overlay').classList.remove('show');
+  loadStats(); loadHistory(); resumeOrNew();
+}
+
 function resumeOrNew(){
   loadBest();
   if(loadState()){
@@ -2215,7 +2614,11 @@ function resumeOrNew(){
   }
 }
 
-document.getElementById('new-game-btn').addEventListener('click', ()=>{ sfxClick(); newGame(); });
+document.getElementById('new-game-btn').addEventListener('click', ()=>{
+  sfxClick();
+  if(window.Multiplayer?.isMatchActive()){ setHint('對戰中不能重開單人局',false); return; }
+  newGame();
+});
 document.getElementById('retry-btn').addEventListener('click', ()=>{
   sfxClick();
   document.getElementById('game-over-overlay').classList.remove('show');
@@ -2386,6 +2789,20 @@ function applyReplayMove(g, move){
   (move.obs||[]).forEach(([r,c])=>{ g[r][c]=OBS; });
   return {fr,fc};
 }
+function applyReplayAttack(g,cells){
+  if(!Array.isArray(cells)) throw new Error('attack cells 格式錯誤');
+  const coords=cells.map(cell=>Number.isInteger(cell)?[Math.floor(cell/COLS),cell%COLS]:cell);
+  const seen=new Set();
+  for(const cell of coords){
+    if(!Array.isArray(cell)||cell.length!==2) throw new Error('attack cell 格式錯誤');
+    const r=cell[0],c=cell[1],key=r+','+c;
+    if(!Number.isInteger(r)||!Number.isInteger(c)||r<0||r>=ROWS||c<0||c>=COLS||seen.has(key)||g[r][c])
+      throw new Error('attack cell 與棋盤不一致');
+    seen.add(key);
+  }
+  coords.forEach(([r,c])=>{ g[r][c]=OBS; });
+  return g;
+}
 function computeReplayGridAtStep(entry, stepIdx){
   const g = decodeGrid(entry.initialGrid);
   for(let i=0;i<stepIdx;i++) applyReplayMove(g, entry.moves[i]);
@@ -2402,8 +2819,8 @@ function replayCellClass(r,c,val){
   else if(val) cls+=' has-piece';
   return cls;
 }
-function renderReplayBoard(g){
-  const board=document.getElementById('replay-board');
+function renderReplayBoard(g,boardId){
+  const board=document.getElementById(boardId||'replay-board');
   if(!board) return;
   board.innerHTML='';
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
@@ -2540,6 +2957,147 @@ function closeReplay(){
   if(listView) listView.hidden = false;
 }
 
+/* Multiplayer replay stays isolated from the live grid, like the solo viewer above. */
+let mpReplayPrepared=null, mpReplayStep=0, mpReplayTimer=null, mpReplayPlaying=false, mpReplaySpeed=1;
+
+function validateMultiplayerReplayMove(g,move){
+  if(!move||!Number.isInteger(move.d)||!Number.isInteger(move.c)||!Number.isInteger(move.r)||!Number.isInteger(move.col)||
+     !PIECE_DEFS[move.d]||!COLORS[move.c]) throw new Error('move 格式錯誤');
+  const shape=PIECE_DEFS[move.d];
+  for(let r=0;r<shape.length;r++) for(let c=0;c<shape[r].length;c++) if(shape[r][c]){
+    const gr=move.r+r,gc=move.col+c;
+    if(gr<0||gr>=ROWS||gc<0||gc>=COLS||g[gr][gc]) throw new Error('move 與棋盤不一致');
+  }
+  applyReplayMove(g,move);
+}
+
+async function prepareMultiplayerReplay(bundle){
+  mpReplayPrepared=null;
+  if(!bundle||bundle.formatVersion!==1||!Array.isArray(bundle.players)||bundle.players.length!==2||!bundle.result)
+    throw new Error('不支援的回放格式');
+  if(new TextEncoder().encode(JSON.stringify(bundle)).length>512*1024) throw new Error('回放資料超過上限');
+  const ids=new Set();
+  const players=[];
+  for(const raw of bundle.players){
+    if(!raw||typeof raw.playerId!=='string'||ids.has(raw.playerId)||typeof raw.initialGrid!=='string'||!/^[.X1-9]{81}$/.test(raw.initialGrid))
+      throw new Error('玩家回放資料無效');
+    ids.add(raw.playerId);
+    const moves=Array.isArray(raw.moves)?raw.moves:[];
+    const attacks=Array.isArray(raw.attacks)?raw.attacks:[];
+    if(moves.length>MOVES_CAP) throw new Error('回放步數超過上限');
+    const events=moves.map(move=>({type:'move',t:move.t,boardEventSeq:move.boardEventSeq,data:move}))
+      .concat(attacks.map(attack=>({type:'attack',t:attack.t,boardEventSeq:attack.boardEventSeq,data:attack})))
+      .sort((a,b)=>a.boardEventSeq-b.boardEventSeq);
+    const finalSeq=Number(raw.finalBoardEventSeq);
+    if(!Number.isInteger(finalSeq)||finalSeq!==events.length) throw new Error('boardEventSeq 數量不符');
+    let lastT=-1;
+    const finalGrid=decodeGrid(raw.initialGrid);
+    events.forEach((event,i)=>{
+      if(event.boardEventSeq!==i+1||!Number.isFinite(event.t)||event.t<lastT) throw new Error('boardEventSeq 不連續');
+      lastT=event.t;
+      if(event.type==='move') validateMultiplayerReplayMove(finalGrid,event.data);
+      else applyReplayAttack(finalGrid,event.data.cells);
+    });
+    const hash=await window.Multiplayer.sha256(encodeGrid(finalGrid));
+    if(typeof raw.finalBoardHash!=='string'||hash!==raw.finalBoardHash.toLowerCase()) throw new Error('棋盤完整性驗證失敗');
+    const score=bundle.result.scores&&bundle.result.scores[raw.playerId];
+    if(!Number.isFinite(raw.finalScore)||raw.finalScore!==score) throw new Error('結果分數不一致');
+    if((moves.length?moves[moves.length-1].s:0)!==raw.finalScore) throw new Error('move 分數不一致');
+    players.push({raw,events,initialGrid:raw.initialGrid});
+  }
+  const scores=players.map(p=>p.raw.finalScore);
+  const winner=bundle.result.winnerId;
+  if(bundle.result.reason==='score'){
+    const expected=scores[0]===scores[1]?null:players[scores[0]>scores[1]?0:1].raw.playerId;
+    if(winner!==expected) throw new Error('勝負資料不一致');
+  }else if(bundle.result.reason==='draw'&&!(scores[0]===scores[1]&&winner==null)){
+    throw new Error('平手資料不一致');
+  }else if(bundle.result.reason==='both_forfeit'&&winner!=null){
+    throw new Error('棄權資料不一致');
+  }else if(bundle.result.reason==='forfeit'){
+    const forfeited=bundle.result.forfeitedPlayerIds;
+    if(!Array.isArray(forfeited)||forfeited.length!==1||winner==null||winner===forfeited[0]||!ids.has(winner))
+      throw new Error('棄權資料不一致');
+  }else if(bundle.result.reason==='no_moves'){
+    const unable=bundle.result.unableToMovePlayerIds;
+    const expected=players.find(player=>player.raw.playerId!==unable?.[0])?.raw.playerId||null;
+    if(!Array.isArray(unable)||unable.length!==1||!ids.has(unable[0])||winner!==expected)
+      throw new Error('淘汰資料不一致');
+  }else if(!['score','draw','forfeit','both_forfeit','no_moves'].includes(bundle.result.reason)){
+    throw new Error('未知結算原因');
+  }
+  const timeline=[];
+  players.forEach((player,playerIdx)=>player.events.forEach(event=>timeline.push({playerIdx,event})));
+  timeline.sort((a,b)=>a.event.t-b.event.t||a.playerIdx-b.playerIdx||a.event.boardEventSeq-b.event.boardEventSeq);
+  mpReplayPrepared={bundle,players,timeline};
+  mpReplayStep=0;
+  return true;
+}
+
+function renderMultiplayerReplayStep(step){
+  if(!mpReplayPrepared) return;
+  mpReplayStep=Math.max(0,Math.min(mpReplayPrepared.timeline.length,step));
+  const grids=mpReplayPrepared.players.map(player=>decodeGrid(player.initialGrid));
+  for(let i=0;i<mpReplayStep;i++){
+    const item=mpReplayPrepared.timeline[i],g=grids[item.playerIdx],event=item.event;
+    if(event.type==='move') validateMultiplayerReplayMove(g,event.data);
+    else applyReplayAttack(g,event.data.cells);
+  }
+  renderReplayBoard(grids[0],'mp-replay-board-a');
+  renderReplayBoard(grids[1],'mp-replay-board-b');
+  document.getElementById('mp-replay-prev').disabled=mpReplayStep===0;
+  document.getElementById('mp-replay-next').disabled=mpReplayStep===mpReplayPrepared.timeline.length;
+  document.getElementById('mp-replay-play').disabled=mpReplayStep===mpReplayPrepared.timeline.length;
+  document.getElementById('mp-replay-play').textContent=mpReplayPlaying?'暫停':'播放';
+  const current=mpReplayStep?mpReplayPrepared.timeline[mpReplayStep-1].event:null;
+  document.getElementById('mp-replay-status').textContent=mpReplayStep===mpReplayPrepared.timeline.length
+    ? '回放結束' : (current?`第 ${mpReplayStep} 步・${Math.round(current.t/100)/10}s`:'回放開始');
+}
+
+function stopMultiplayerReplay(){
+  mpReplayPlaying=false;
+  if(mpReplayTimer){clearTimeout(mpReplayTimer);mpReplayTimer=null;}
+}
+function closeMultiplayerReplay(){
+  stopMultiplayerReplay();
+  mpReplayPrepared=null;
+  mpReplayStep=0;
+  document.getElementById('mp-replay-boards').hidden=true;
+  document.getElementById('mp-replay-controls').hidden=true;
+  document.getElementById('mp-replay-status').textContent='';
+}
+function openMultiplayerReplay(){
+  if(!mpReplayPrepared){document.getElementById('mp-replay-status').textContent='回放無法載入';return;}
+  stopMultiplayerReplay();
+  document.getElementById('mp-replay-boards').hidden=false;
+  document.getElementById('mp-replay-controls').hidden=false;
+  document.getElementById('mp-replay-name-a').textContent=mpReplayPrepared.players[0].raw.name||'玩家 1';
+  document.getElementById('mp-replay-name-b').textContent=mpReplayPrepared.players[1].raw.name||'玩家 2';
+  renderMultiplayerReplayStep(0);
+}
+function toggleMultiplayerReplay(){
+  if(!mpReplayPrepared) return;
+  if(mpReplayPlaying){stopMultiplayerReplay();renderMultiplayerReplayStep(mpReplayStep);return;}
+  if(mpReplayStep>=mpReplayPrepared.timeline.length) return;
+  mpReplayPlaying=true; renderMultiplayerReplayStep(mpReplayStep);
+  const tick=()=>{
+    if(!mpReplayPlaying) return;
+    renderMultiplayerReplayStep(mpReplayStep+1);
+    if(mpReplayStep>=mpReplayPrepared.timeline.length){stopMultiplayerReplay();renderMultiplayerReplayStep(mpReplayStep);return;}
+    mpReplayTimer=setTimeout(tick,600/mpReplaySpeed);
+  };
+  tick();
+}
+function initMultiplayerReplayControls(){
+  document.getElementById('mp-replay-prev').addEventListener('click',()=>{stopMultiplayerReplay();renderMultiplayerReplayStep(mpReplayStep-1);});
+  document.getElementById('mp-replay-next').addEventListener('click',()=>{stopMultiplayerReplay();renderMultiplayerReplayStep(mpReplayStep+1);});
+  document.getElementById('mp-replay-play').addEventListener('click',toggleMultiplayerReplay);
+  document.querySelectorAll('[data-mp-speed]').forEach(btn=>btn.addEventListener('click',()=>{
+    mpReplaySpeed=+btn.dataset.mpSpeed;
+    document.querySelectorAll('[data-mp-speed]').forEach(b=>b.classList.toggle('active',b===btn));
+  }));
+}
+
 /* ══════════════════════════════════════
    PWA 安裝按鈕（C-5）
    不支援 beforeinstallprompt 的瀏覽器（如 iOS Safari）永遠不會觸發事件，
@@ -2601,7 +3159,20 @@ initThemeToggle();
 initSoundToggle();
 initStatsOverlay();
 initInstallButton();
+initMultiplayerReplayControls();
 resumeOrNew();
+window.Multiplayer.init({
+  startMatch:startMultiplayerMatch,
+  restoreSolo:restoreSoloGame,
+  setInputLocked(locked){ if(locked) cancelMultiplayerInteraction(); },
+  cancelInteraction:cancelMultiplayerInteraction,
+  getEmptyCells:multiplayerEmptyCells,
+  getObstacleCount:countObstacles,
+  applyAttack:applyMultiplayerAttack,
+  prepareReplay:prepareMultiplayerReplay,
+  openReplay:openMultiplayerReplay,
+  closeReplay:closeMultiplayerReplay
+});
 </script>
 </body>
 </html>

@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "block-puzzle-multiplayer",
+  "main": "worker/index.mjs",
+  "compatibility_date": "2026-07-10",
+  "durable_objects": {
+    "bindings": [
+      { "name": "GAME_ROOMS", "class_name": "GameRoom" }
+    ]
+  },
+  "migrations": [
+    { "tag": "v1", "new_sqlite_classes": ["GameRoom"] }
+  ]
+}
