@@ -1,16 +1,16 @@
 # Loop State — My Project
 
-Last run: 2026-07-10 — Vercel 多人 client 資產部署修正與 fresh-context verification 完成（worktree）
+Last run: 2026-07-10 — Vercel production 多人 client 資產修正、部署與手機驗證完成
 
 ## High Priority (loop is acting or waiting on human)
 
-- Production `https://mitsabkpuz.vercel.app/multiplayer.js` 目前仍為 404；修正與 preview 已完成，依安全規則等待 human 決定是否 commit／push／更新 production。
+- 無阻斷項目；production 已更新並驗證。依安全規則等待 human 決定是否把 branch merge 回 `main`。
 
 ## Watch List
 
 - 保持現有單人 new/resume/history/replay 流程。
 - Multiplayer MVP 是 casual trust；公開排名／獎勵前需要 server-side rules validation。
-- 修改只存在 `/private/tmp/block-puzzle-multiplayer` 的 `codex/multiplayer-implementation` branch worktree。
+- 修改已推送至 `codex/multiplayer-implementation` branch；工作目錄位於 `/private/tmp/block-puzzle-multiplayer`。
 
 ## Recent Noise (ignored this run)
 
@@ -45,3 +45,5 @@ Run log:
 - 分層驗證：v1→v2 migration、10 筆 8 full／2 result-only、50 cap、UTF-8／Quota downgrade-first、duplicate restore full、深層損壞自動降級、reload、result-only disabled UI、v19、24/24 tests 與 fresh-context verifier final PASS。
 - Vercel 根因：`.vercelignore` 是 allowlist 但未包含 `!multiplayer.js`，production HTML 因此載入 404，導致多人 tab 沒有 click handler 且 Service Worker install 失敗。
 - Vercel 修正：allowlist 加入 `!multiplayer.js`；CLI dry-run 與 preview deployment 均包含 8 個檔案及 `multiplayer.js`，syntax、inline parse、Worker tests 24/24、diff check 與 fresh-context verifier 全數 PASS。
+- Production 部署：deployment `dpl_249PGzWvq1xWn7d9KmxfXkTc4r3V` 已 alias 至 `https://mitsabkpuz.vercel.app`；首頁、`multiplayer.js`、`sw.js` 均回 200。
+- Production 手機驗證：Browser 390×844 可由單人切換到多人 tab，tabpanel 正常顯示、無水平溢出且 console logs 為空。
