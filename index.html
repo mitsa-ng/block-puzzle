@@ -650,15 +650,36 @@
     }
     .play-area-label { font-size:14px; font-weight:700; }
     .play-area-note { font-size:10px; opacity:.82; letter-spacing:.4px; }
+    /* 多人大廳改為置中 modal：外層 .multiplayer-panel 當遮罩，內層 .mp-panel-dialog 承接原卡片視覺。
+       遮罩沿用多人 UI 的主題感知風格（var(--bg)+blur，與 #mp-result-overlay／#mp-achievements-overlay 一致）。
+       z-index 2000：高於棋盤，低於結算(2100)與成就(2200)，因為大廳內可再點開成就 overlay。 */
     .multiplayer-panel {
-      width:100%; max-width:420px; margin:0 0 14px; padding:16px;
-      background:linear-gradient(145deg,color-mix(in srgb,var(--surface) 96%,var(--accent) 4%),var(--surface));
-      border:1px solid color-mix(in srgb,var(--border) 72%,var(--accent) 28%); border-radius:var(--radius-lg);
-      box-shadow:var(--shadow-md); animation:mp-panel-in 220ms ease both;
+      position:fixed; inset:0; z-index:2000; margin:0; padding:20px 14px;
+      display:flex; align-items:center; justify-content:center;
+      background:color-mix(in srgb,var(--bg) 86%,transparent); backdrop-filter:blur(6px);
+      animation:mp-overlay-in 180ms ease both;
     }
     .multiplayer-panel[hidden] { display:none; }
-    @keyframes mp-panel-in { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
-    .mp-panel-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; }
+    /* 對戰／結算階段（body.mp-active）強制隱藏大廳，露出棋盤與 HUD，狀態機不需改動。 */
+    body.mp-active .multiplayer-panel { display:none; }
+    .mp-panel-dialog {
+      position:relative; width:100%; max-width:420px; max-height:min(88vh,720px); overflow-y:auto;
+      padding:20px 16px 18px;
+      background:linear-gradient(145deg,color-mix(in srgb,var(--surface) 96%,var(--accent) 4%),var(--surface));
+      border:1px solid color-mix(in srgb,var(--border) 72%,var(--accent) 28%); border-radius:var(--radius-lg);
+      box-shadow:var(--shadow-lg); animation:mp-panel-in 220ms ease both;
+    }
+    .mp-panel-close {
+      position:absolute; top:10px; right:10px; z-index:2;
+      display:grid; place-items:center; width:32px; height:32px; padding:0;
+      border:1px solid var(--border); border-radius:var(--radius-full);
+      background:var(--surface-2); color:var(--text-muted); font-size:18px; line-height:1; cursor:pointer;
+      transition:color 160ms ease,border-color 160ms ease,background-color 160ms ease;
+    }
+    .mp-panel-close:hover { color:var(--text); border-color:color-mix(in srgb,var(--accent) 60%,var(--border)); }
+    @keyframes mp-overlay-in { from { opacity:0; } to { opacity:1; } }
+    @keyframes mp-panel-in { from { opacity:0; transform:translateY(8px) scale(.98); } to { opacity:1; transform:translateY(0) scale(1); } }
+    .mp-panel-heading { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:12px; padding-right:34px; }
     .mp-kicker { display:block; margin-bottom:2px; font-size:10px; font-weight:700; color:var(--accent); letter-spacing:1.2px; }
     .mp-panel-title { font-family:'Baloo 2','Noto Sans TC',sans-serif; font-size:20px; line-height:1.2; }
     .mp-private-badge {
@@ -874,9 +895,11 @@
     </button>
   </nav>
 
-  <section class="multiplayer-panel" id="mp-panel" role="tabpanel" aria-labelledby="play-area-multiplayer" hidden>
+  <section class="multiplayer-panel" id="mp-panel" role="dialog" aria-modal="true" aria-labelledby="mp-panel-title-label" hidden>
+   <div class="mp-panel-dialog">
+    <button class="mp-panel-close" id="mp-panel-close" type="button" aria-label="關閉多人對戰">×</button>
     <header class="mp-panel-heading">
-      <div><span class="mp-kicker">MULTIPLAYER</span><h2 class="mp-panel-title">建立或加入對戰</h2></div>
+      <div><span class="mp-kicker">MULTIPLAYER</span><h2 class="mp-panel-title" id="mp-panel-title-label">建立或加入對戰</h2></div>
       <span class="mp-private-badge">私人房</span>
     </header>
     <div class="mp-row">
@@ -909,6 +932,7 @@
         <button class="btn mp-achievement-btn" id="mp-history-open" type="button">歷史 <span id="mp-history-count">0</span></button>
       </div>
     </div>
+   </div>
   </section>
 
   <div class="mp-hud" id="mp-hud" hidden aria-label="對戰狀態">

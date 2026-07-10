@@ -1577,6 +1577,14 @@
     adapter = gameAdapter;
     $('play-area-solo').addEventListener('click', enterSoloArea);
     $('play-area-multiplayer').addEventListener('click', enterMultiplayerArea);
+    // 大廳改為 modal 後的關閉途徑：關閉鈕／點遮罩／Esc → 離開多人回單人（enterSoloArea 在對戰中會自行拒絕）。
+    $('mp-panel-close').addEventListener('click', enterSoloArea);
+    $('mp-panel').addEventListener('click', event => { if (event.target === $('mp-panel')) enterSoloArea(); });
+    document.addEventListener('keydown', event => {
+      if (event.key !== 'Escape' || $('mp-panel').hidden) return;
+      if (document.body.classList.contains('mp-active') || !$('mp-achievements-overlay').hidden) return;
+      enterSoloArea();
+    });
     $('mp-mode').addEventListener('change', selectMode);
     $('mp-create-btn').addEventListener('click', () => startConnection('create'));
     $('mp-join-btn').addEventListener('click', () => startConnection('join'));
