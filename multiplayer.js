@@ -36,10 +36,18 @@
     { id: 'duel_debut', icon: '⚔️', name: '初次交鋒', description: '完成第一場多人對戰', check: ({ progress }) => progress.matches >= 1 },
     { id: 'first_win', icon: '🏆', name: '第一勝', description: '贏得第一場多人對戰', check: ({ progress }) => progress.wins >= 1 },
     { id: 'streak_3', icon: '🔥', name: '勢不可擋', description: '達成三連勝', check: ({ progress }) => progress.bestStreak >= 3 },
+    { id: 'streak_5', icon: '🌟', name: '連勝大師', description: '達成五連勝', check: ({ progress }) => progress.bestStreak >= 5 },
+    { id: 'streak_10', icon: '💥', name: '十連勝', description: '達成十連勝', check: ({ progress }) => progress.bestStreak >= 10 },
     { id: 'score_500', icon: '💎', name: '高分玩家', description: '比分快賽單局達到 500 分', check: ({ mode, score }) => mode === 'score' && score >= 500 },
+    { id: 'score_800', icon: '💯', name: '極限高分', description: '比分快賽單局達到 800 分', check: ({ mode, score }) => mode === 'score' && score >= 800 },
     { id: 'attack_victor', icon: '🧱', name: '障礙霸主', description: '贏得一場障礙對戰', check: ({ mode, won }) => mode === 'attack' && won },
     { id: 'knockout', icon: '⚡', name: '封鎖終結', description: '讓對手先無法落子', check: ({ result, won }) => won && result.reason === 'no_moves' },
+    { id: 'draw_battle', icon: '🤝', name: '勢均力敵', description: '打成一場平手', check: ({ result }) => result.reason === 'draw' },
     { id: 'veteran_5', icon: '🎖️', name: '老練對手', description: '完成五場多人對戰', check: ({ progress }) => progress.matches >= 5 },
+    { id: 'veteran_10', icon: '🛡️', name: '百戰之將', description: '完成十場多人對戰', check: ({ progress }) => progress.matches >= 10 },
+    { id: 'veteran_25', icon: '🎯', name: '沙場老將', description: '完成二十五場多人對戰', check: ({ progress }) => progress.matches >= 25 },
+    { id: 'wins_10', icon: '👑', name: '常勝軍', description: '累積贏得十場多人對戰', check: ({ progress }) => progress.wins >= 10 },
+    { id: 'wins_25', icon: '🚀', name: '常勝統帥', description: '累積贏得二十五場多人對戰', check: ({ progress }) => progress.wins >= 25 },
   ];
 
   function utf8Bytes(value) {
@@ -1717,7 +1725,7 @@
     Object.assign(state, saved);
     return shuffled.join(',') === '8,1,3,5,7,4,0,2,6' && boardGate && finishedGate && matchGuards && generationGuards && canonicalGuards &&
       migrationGuards && tierGuards && sizeGuards && capGuards && restoreGuards && corruptGuards && historyGuards &&
-      ACHIEVEMENTS.length === 7 && ACHIEVEMENTS.some(achievement => achievement.id === 'knockout') &&
+      ACHIEVEMENTS.length === 15 && ACHIEVEMENTS.some(achievement => achievement.id === 'knockout') &&
       isLobbyRollback({status:'lobby',matchId:null}) &&
       defaultServerBase('http://localhost:8765/') === 'http://localhost:8787' &&
       defaultServerBase('http://127.0.0.1:8000/') === 'http://127.0.0.1:8787' &&

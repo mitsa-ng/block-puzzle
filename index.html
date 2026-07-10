@@ -928,7 +928,7 @@
     <div class="mp-achievement-preview">
       <div><span class="mp-achievement-kicker">多人戰績</span><span class="mp-achievement-summary" id="mp-achievement-summary">0 場 · 0 勝 · 連勝 0</span></div>
       <div class="mp-achievement-actions">
-        <button class="btn mp-achievement-btn" id="mp-achievement-open" type="button">成就 <span id="mp-achievement-count">0/7</span></button>
+        <button class="btn mp-achievement-btn" id="mp-achievement-open" type="button">成就 <span id="mp-achievement-count">0/15</span></button>
         <button class="btn mp-achievement-btn" id="mp-history-open" type="button">歷史 <span id="mp-history-count">0</span></button>
       </div>
     </div>
@@ -1399,10 +1399,18 @@ const ACHIEVEMENTS = [
   {id:'first_clear',  label:'首次消行'},
   {id:'double_clear', label:'單次雙消'},
   {id:'triple_clear', label:'單次三消'},
+  {id:'quad_clear',   label:'單次四消'},
+  {id:'penta_clear',  label:'單次五消'},
   {id:'streak5',      label:'連續 5 回合消行'},
+  {id:'streak10',     label:'連續 10 回合消行'},
   {id:'score500',     label:'單局 500 分'},
   {id:'score1000',    label:'單局 1000 分'},
+  {id:'score2000',    label:'單局 2000 分'},
   {id:'level5',       label:'等級 5'},
+  {id:'level10',      label:'等級 10'},
+  {id:'lines_100',    label:'生涯消除 100 行'},
+  {id:'games_10',     label:'累計遊玩 10 局'},
+  {id:'career_10000', label:'生涯累計 10000 分'},
   {id:'clear_board',  label:'清空全盤'},
 ];
 let achieved = new Set();
@@ -2337,6 +2345,8 @@ function doPlaceNow(idx,sr,sc){
   if(!duel && total>0) unlockAchievement('first_clear');
   if(!duel && total>=2) unlockAchievement('double_clear');
   if(!duel && total>=3) unlockAchievement('triple_clear');
+  if(!duel && total>=4) unlockAchievement('quad_clear');
+  if(!duel && total>=5) unlockAchievement('penta_clear');
 
   // Count obstacle cells caught in cleared lines（必須在 eraseLines 之前計算）
   const obsCleared = total>0 ? countObsInLines(fr,fc) : 0;
@@ -2373,6 +2383,7 @@ function doPlaceNow(idx,sr,sc){
     // 統計：累計消行數／單次最高消行（C-1）
     if(!duel){
       stats.totalLines += total;
+      if(stats.totalLines >= 100) unlockAchievement('lines_100');
       if(total > stats.maxCombo) stats.maxCombo = total;
     }
     gameLines += total; // D-1：本局累計消行數，供 game over 時寫入歷史紀錄
@@ -2408,11 +2419,13 @@ function doPlaceNow(idx,sr,sc){
   // 統計／成就：最高連續 streak（C-1）／streak×5 成就（C-2）
   if(!duel && streak > stats.maxStreak) stats.maxStreak = streak;
   if(!duel && streak >= 5) unlockAchievement('streak5');
+  if(!duel && streak >= 10) unlockAchievement('streak10');
   if(streak > gameMaxStreak) gameMaxStreak = streak; // D-1：本局最高 streak，供 game over 時寫入歷史紀錄
 
   // 成就：單局分數門檻（C-2），score 此時已含本次 pts 與 streakBonus
   if(!duel && score >= 500)  unlockAchievement('score500');
   if(!duel && score >= 1000) unlockAchievement('score1000');
+  if(!duel && score >= 2000) unlockAchievement('score2000');
 
   // ── Level-up check：務必在「非動畫分支的 renderBoard」／postPlace()／isGameOver() 之前生成障礙物（A2）──
   const nl = Math.floor(score/100)+1;
@@ -2430,6 +2443,7 @@ function doPlaceNow(idx,sr,sc){
   }
   // 成就：等級 5（C-2）。不限定「剛好升到」，重載後若已達等級 5 也該補判（累積型成就）
   if(!duel && level >= 5) unlockAchievement('level5');
+  if(!duel && level >= 10) unlockAchievement('level10');
 
   // D-2：回放記錄 — 上限 500 步，超過停止記錄該局回放（歷史仍記分數與 final grid，見 recordHistoryEntry）。
   // d/c 用 index 引用 PIECE_DEFS/COLORS，不存整個形狀陣列；s 存放置後的累計分數（回放直接顯示，不重算）。
@@ -2548,6 +2562,8 @@ function showGameOver(fromResume){
   if(!fromResume){
     stats.games += 1;
     stats.totalScore += score;
+    if(stats.games >= 10) unlockAchievement('games_10');
+    if(stats.totalScore >= 10000) unlockAchievement('career_10000');
     saveStats();
     recordHistoryEntry(); // D-1：同一個 fromResume guard，避免 resume 重整補畫面時重複寫入歷史
   }
