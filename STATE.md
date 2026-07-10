@@ -1,10 +1,10 @@
 # Loop State — My Project
 
-Last run: 2026-07-10 — 多人歷史分層保存與 fresh-context verification 完成（worktree）
+Last run: 2026-07-10 — Vercel 多人 client 資產部署修正與 fresh-context verification 完成（worktree）
 
 ## High Priority (loop is acting or waiting on human)
 
-- 無阻斷項目；依安全規則等待 human 決定是否 commit／merge／push。
+- Production `https://mitsabkpuz.vercel.app/multiplayer.js` 目前仍為 404；修正與 preview 已完成，依安全規則等待 human 決定是否 commit／push／更新 production。
 
 ## Watch List
 
@@ -43,3 +43,5 @@ Run log:
 - 歷史 UX：多人戰績新增「歷史」入口，成就／歷史 ARIA tabs、勝負／模式／比分／原因 cards、單筆刪除／清除、雙棋盤播放與返回；v17 app shell。
 - 歷史驗證：真實完成一局→保存→播放→返回→reload 持久化、390px 無水平溢出、keyboard tabs／focus、console、client self-test、inline parse、Worker tests 24/24、diff check；兩輪 verifier findings 修正後 final PASS。
 - 分層驗證：v1→v2 migration、10 筆 8 full／2 result-only、50 cap、UTF-8／Quota downgrade-first、duplicate restore full、深層損壞自動降級、reload、result-only disabled UI、v19、24/24 tests 與 fresh-context verifier final PASS。
+- Vercel 根因：`.vercelignore` 是 allowlist 但未包含 `!multiplayer.js`，production HTML 因此載入 404，導致多人 tab 沒有 click handler 且 Service Worker install 失敗。
+- Vercel 修正：allowlist 加入 `!multiplayer.js`；CLI dry-run 與 preview deployment 均包含 8 個檔案及 `multiplayer.js`，syntax、inline parse、Worker tests 24/24、diff check 與 fresh-context verifier 全數 PASS。

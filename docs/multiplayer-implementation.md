@@ -59,6 +59,12 @@
 - 驗收：最多 50 筆結果；僅最近 8 筆可保留 replay bundle。超過 8 筆或 3 MiB 時先把最舊完整 replay 降級成 result-only，再到 50 筆才刪最舊結果。既有 v1 資料可無損 migration；result-only 卡片清楚顯示「僅保留結果」且不可播放，刪除功能照常。
 - 驗證：v1→v2 migration、duplicate restore full、10 筆 8/2 分層、50 cap、UTF-8／Quota downgrade-first、深層損壞自動降級與 reload、result-only disabled UI、Browser v19／console、client self-test、Worker tests 24/24；verifier finding 修正後 final PASS。
 
+### 2026-07-10 Vercel 多人 client 資產
+
+- 目標：確保 Vercel production 同時部署 `index.html` 與負責多人頁籤事件的 `multiplayer.js`。
+- 驗收：`.vercelignore` allowlist 包含 `multiplayer.js`；production `/multiplayer.js` 回 200；mobile viewport 可切到多人頁；Service Worker app-shell install 不再因缺少資產而失敗。
+- 驗證：Vercel deployment file list／HTTP 200、production mobile Browser 點擊、console／network、Worker tests 與 fresh-context verifier。
+
 ## 採用 defaults
 
 - 斷線立即暫停；15 秒內同頁重連，否則判負。
