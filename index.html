@@ -571,7 +571,7 @@
       color: #A9A3C2; padding: 16px 8px 12px; border-bottom: 2px solid transparent;
     }
     .info-tab.active { color: #F1EEFB; border-bottom-color: #9B7BFF; }
-    .info-tab-panel { padding: 18px 20px 22px; overflow-y: auto; }
+    .info-tab-panel { padding: 18px 20px 22px; overflow-y: auto; flex: 1 1 auto; min-height: 0; }
     .info-tab-panel[hidden] { display: none; }
 
     .stats-list { display: flex; flex-direction: column; gap: 10px; }
@@ -837,6 +837,7 @@
       .mp-replay-boards { grid-template-columns:1fr; }
       .mp-replay-board { --mp-replay-cell:min(8vw,32px); }
       .mp-achievement-grid { grid-template-columns:1fr; }
+      .ach-grid { grid-template-columns:1fr; }
       .mp-achievement-preview { align-items:flex-start; flex-direction:column; }
       .mp-achievement-actions { width:100%; justify-content:stretch; }
       .mp-achievement-actions .btn { flex:1 1 0; }
@@ -1391,7 +1392,7 @@ function initSoundToggle(){
 
 /* ══════════════════════════════════════
    成就徽章（C-2）
-   8 個成就，達成後永久保留（localStorage 'bpz_v4_ach' 存已達成 id 陣列，不隨單局重置）；
+   16 個成就，達成後永久保留（localStorage 'bpz_v4_ach' 存已達成 id 陣列，不隨單局重置）；
    toast 沿用 record-toast 樣式，但用佇列讓同時達成多個成就時依序顯示、不重疊。
 ══════════════════════════════════════ */
 const SK_ACH = 'bpz_v4_ach';
