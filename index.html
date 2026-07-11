@@ -3231,6 +3231,77 @@ async function forceUpdateGame(){
 }
 document.getElementById('update-game-btn')?.addEventListener('click', forceUpdateGame);
 
+/* ══ 統一成就頁面（右上角 🏆 按鈕）：陳列所有單人＋多人成就。
+   單人資料直接讀本 script 內的 ACHIEVEMENTS／achieved，多人透過 window.Multiplayer.getAchievements()，
+   都不重複定義，避免日後新增成就時漏更新（就是之前「顯示不全」的根源）。 ══ */
+(function(){
+  var STY = document.createElement('style');
+  STY.textContent = [
+    '#all-ach-btn{position:absolute;top:max(20px,env(safe-area-inset-top));right:calc(max(12px,env(safe-area-inset-right)) + 108px);width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);color:var(--text);font-size:20px;cursor:pointer;z-index:10;transition:transform 150ms ease,border-color 200ms ease}',
+    '#all-ach-btn:active{transform:scale(.92)}',
+    '#all-ach-overlay{position:fixed;inset:0;z-index:2400;display:grid;place-items:center;padding:20px 12px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px)}',
+    '#all-ach-overlay[hidden]{display:none}',
+    '.aa-panel{width:min(560px,100%);max-height:90vh;display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);overflow:hidden}',
+    '.aa-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border)}',
+    '.aa-head h2{margin:0;font-family:\'Baloo 2\',\'Noto Sans TC\',sans-serif;font-size:20px;color:var(--text)}',
+    '.aa-close{width:36px;height:36px;flex:0 0 auto;border-radius:var(--radius-full);background:transparent;border:1px solid var(--border);color:var(--text);font-size:18px;line-height:1;cursor:pointer}',
+    '.aa-body{padding:16px 18px;overflow-y:auto;min-height:0;display:flex;flex-direction:column;gap:18px;-webkit-overflow-scrolling:touch}',
+    '.aa-sec-title{font-size:13px;font-weight:800;color:var(--text);letter-spacing:.5px;margin-bottom:9px}',
+    '.aa-count{color:var(--text-muted);font-weight:700;font-size:12px;margin-left:6px}',
+    '.aa-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}',
+    '.aa-card{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center;min-width:0;padding:10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface-2)}',
+    '.aa-card.aa-off{opacity:.5;filter:saturate(.4)}',
+    '.aa-icon{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:color-mix(in srgb,var(--accent) 14%,var(--surface));font-size:18px}',
+    '.aa-name{display:block;color:var(--text);font-size:12px;font-weight:800;overflow-wrap:anywhere}',
+    '.aa-desc{display:block;margin-top:2px;color:var(--text-muted);font-size:10px;line-height:1.4}',
+    '@media (max-width:560px){.aa-grid{grid-template-columns:1fr}}',
+    /* 手機端：略縮小標題與右上三顆按鈕，讓 🏆 成就鈕不與置中標題重疊 */
+    '@media (max-width:560px){#game-root .title{font-size:16px}#theme-toggle-btn{width:38px;height:38px;right:max(10px,env(safe-area-inset-right))}#sound-toggle-btn{width:38px;height:38px;right:calc(max(10px,env(safe-area-inset-right)) + 44px)}#all-ach-btn{width:38px;height:38px;right:calc(max(10px,env(safe-area-inset-right)) + 88px);font-size:17px}}'
+  ].join('');
+  document.head.appendChild(STY);
+
+  var btn = document.createElement('button');
+  btn.id = 'all-ach-btn'; btn.type = 'button';
+  btn.setAttribute('aria-label','查看所有成就'); btn.title = '成就';
+  btn.textContent = '🏆';
+  (document.getElementById('game-root') || document.body).appendChild(btn);
+
+  var ov = document.createElement('div');
+  ov.id = 'all-ach-overlay'; ov.hidden = true;
+  ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label','所有成就');
+  ov.innerHTML =
+    '<div class="aa-panel">'+
+      '<div class="aa-head"><h2>成就</h2><button class="aa-close" type="button" aria-label="關閉">×</button></div>'+
+      '<div class="aa-body">'+
+        '<section><div class="aa-sec-title">單人成就<span class="aa-count" id="aa-solo-count"></span></div><div class="aa-grid" id="aa-solo-grid"></div></section>'+
+        '<section><div class="aa-sec-title">多人成就<span class="aa-count" id="aa-mp-count"></span></div><div class="aa-grid" id="aa-mp-grid"></div></section>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(ov);
+
+  function esc(s){ return String(s==null?'':s).replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];}); }
+  function soloCard(a,on){ return '<div class="aa-card '+(on?'aa-on':'aa-off')+'"><span class="aa-icon">'+(on?'🏅':'🔒')+'</span><span class="aa-copy"><span class="aa-name">'+esc(a.label)+'</span></span></div>'; }
+  function mpCard(a){ return '<div class="aa-card '+(a.unlocked?'aa-on':'aa-off')+'"><span class="aa-icon">'+(a.unlocked?esc(a.icon):'🔒')+'</span><span class="aa-copy"><span class="aa-name">'+esc(a.name)+'</span><span class="aa-desc">'+esc(a.description)+'</span></span></div>'; }
+
+  function render(){
+    var solo = []; try { if (typeof ACHIEVEMENTS !== 'undefined' && Array.isArray(ACHIEVEMENTS)) solo = ACHIEVEMENTS; } catch(e){}
+    var hasSet = (typeof achieved !== 'undefined' && achieved && typeof achieved.has === 'function');
+    var soloOn = 0;
+    document.getElementById('aa-solo-grid').innerHTML = solo.map(function(a){ var on = hasSet && achieved.has(a.id); if(on) soloOn++; return soloCard(a,on); }).join('');
+    document.getElementById('aa-solo-count').textContent = soloOn + '/' + solo.length;
+    var mp = []; try { if (window.Multiplayer && typeof window.Multiplayer.getAchievements === 'function') mp = window.Multiplayer.getAchievements() || []; } catch(e){}
+    var mpOn = mp.filter(function(a){ return a.unlocked; }).length;
+    document.getElementById('aa-mp-grid').innerHTML = mp.map(mpCard).join('');
+    document.getElementById('aa-mp-count').textContent = mpOn + '/' + mp.length;
+  }
+  function openOv(){ render(); ov.hidden = false; }
+  function closeOv(){ ov.hidden = true; }
+  btn.addEventListener('click', openOv);
+  ov.addEventListener('click', function(e){ if (e.target === ov) closeOv(); });
+  ov.querySelector('.aa-close').addEventListener('click', closeOv);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !ov.hidden) closeOv(); });
+})();
+
 initBoardEvents();
 initThemeToggle();
 initSoundToggle();

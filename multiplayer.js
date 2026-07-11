@@ -1738,6 +1738,8 @@
 
   window.Multiplayer = {
     init,
+    // 供統一成就頁面讀取多人成就＋解鎖狀態（直接來自本檔 ACHIEVEMENTS／duelProgress，永遠同步、不重複定義）
+    getAchievements: () => ACHIEVEMENTS.map(a => ({ id: a.id, icon: a.icon, name: a.name, description: a.description, unlocked: !!(typeof duelProgress !== 'undefined' && duelProgress && duelProgress.unlocked && duelProgress.unlocked[a.id]) })),
     isMatchActive: () => state.matchActive,
     isAttackMode: () => state.matchActive && state.mode === 'attack',
     isInputLocked: () => state.inputLocked,
