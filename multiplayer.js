@@ -1597,7 +1597,7 @@
     $('mp-create-btn').addEventListener('click', () => startConnection('create'));
     $('mp-join-btn').addEventListener('click', () => startConnection('join'));
     $('mp-copy-room-btn').addEventListener('click', copyRoomCode);
-    $('mp-achievement-open').addEventListener('click', () => openAchievements('achievements'));
+    // 大廳成就按鈕已移除（成就統一看右上角 🏆 頁面）；不再綁定 mp-achievement-open
     $('mp-history-open').addEventListener('click', () => openAchievements('history'));
     $('mp-achievement-close').addEventListener('click', closeAchievements);
     $('mp-achievements-overlay').addEventListener('click', event => { if (event.target === $('mp-achievements-overlay')) closeAchievements(); });
