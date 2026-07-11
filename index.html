@@ -154,12 +154,12 @@
       position: relative;
       min-height: 100vh; display: flex; flex-direction: column;
       align-items: center;
-      padding: max(20px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+      padding: max(24px, calc(env(safe-area-inset-top) + 12px)) max(12px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
     }
 
     /* ── Theme toggle ── */
     #theme-toggle-btn {
-      position: absolute; top: max(20px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right));
+      position: absolute; top: max(24px, calc(env(safe-area-inset-top) + 12px)); right: max(12px, env(safe-area-inset-right));
       width: 44px; height: 44px;
       display: flex; align-items: center; justify-content: center;
       border-radius: var(--radius-full);
@@ -177,7 +177,7 @@
 
     /* ── Sound toggle（A-1）：與 theme-toggle-btn 同樣式，並排於其左側，避免重疊 ── */
     #sound-toggle-btn {
-      position: absolute; top: max(20px, env(safe-area-inset-top)); right: calc(max(12px, env(safe-area-inset-right)) + 54px);
+      position: absolute; top: max(24px, calc(env(safe-area-inset-top) + 12px)); right: calc(max(12px, env(safe-area-inset-right)) + 54px);
       width: 44px; height: 44px;
       display: flex; align-items: center; justify-content: center;
       border-radius: var(--radius-full);
@@ -195,7 +195,7 @@
 
     /* ── Update-game button（左上角）：清 SW＋Cache 後強制更新到最新版，樣式沿用 theme/sound 按鈕 ── */
     #update-game-btn {
-      position: absolute; top: max(20px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left));
+      position: absolute; top: max(24px, calc(env(safe-area-inset-top) + 12px)); left: max(12px, env(safe-area-inset-left));
       min-height: 44px; padding: 0 14px;
       display: flex; align-items: center; justify-content: center;
       border-radius: var(--radius-full);
@@ -3236,7 +3236,7 @@ document.getElementById('update-game-btn')?.addEventListener('click', forceUpdat
 (function(){
   var STY = document.createElement('style');
   STY.textContent = [
-    '#all-ach-btn{position:absolute;top:max(20px,env(safe-area-inset-top));right:calc(max(12px,env(safe-area-inset-right)) + 108px);width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);color:var(--text);font-size:20px;cursor:pointer;z-index:10;transition:transform 150ms ease,border-color 200ms ease}',
+    '#all-ach-btn{position:absolute;top:max(24px,calc(env(safe-area-inset-top) + 12px));right:calc(max(12px,env(safe-area-inset-right)) + 108px);width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);color:var(--text);font-size:20px;cursor:pointer;z-index:10;transition:transform 150ms ease,border-color 200ms ease}',
     '#all-ach-btn:active{transform:scale(.92)}',
     '#all-ach-overlay{position:fixed;inset:0;z-index:2400;display:grid;place-items:center;padding:20px 12px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px)}',
     '#all-ach-overlay[hidden]{display:none}',
