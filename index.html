@@ -193,6 +193,20 @@
     #sound-toggle-btn.muted #icon-sound-on { display: none; }
     #sound-toggle-btn.muted #icon-sound-off { display: block; }
 
+    /* ── Update-game button（左上角）：清 SW＋Cache 後強制更新到最新版，樣式沿用 theme/sound 按鈕 ── */
+    #update-game-btn {
+      position: absolute; top: max(20px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left));
+      min-height: 44px; padding: 0 14px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: var(--radius-full);
+      background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow-sm);
+      color: var(--text); font-size: 13px; font-weight: 700; white-space: nowrap; cursor: pointer;
+      transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, transform 150ms ease;
+      z-index: 10;
+    }
+    #update-game-btn:active { transform: scale(0.96); }
+    #update-game-btn:disabled { opacity: 0.6; cursor: default; }
+
     /* ── Header ── */
     .title {
       font-family: 'Baloo 2', 'Noto Sans TC', sans-serif;
@@ -882,6 +896,7 @@
       <line x1="16" y1="9" x2="22" y2="15"/>
     </svg>
   </button>
+  <button id="update-game-btn" type="button" aria-label="清除快取並更新遊戲到最新版">更新遊戲</button>
   <div class="title">Block Puzzle</div>
   <div class="subtitle">方塊消除挑戰</div>
 
@@ -3194,6 +3209,27 @@ function initThemeToggle(){
 
 if('serviceWorker' in navigator)
   window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
+
+// 更新遊戲（左上角按鈕）：註銷 Service Worker＋清掉所有 Cache Storage，再帶 cache-busting query 重新載入，
+// 讓卡在舊 PWA 快取的裝置強制抓到最新 index.html／multiplayer.js。
+async function forceUpdateGame(){
+  const btn = document.getElementById('update-game-btn');
+  if(btn){ btn.disabled = true; btn.textContent = '更新中…'; }
+  try{
+    if('serviceWorker' in navigator){
+      const regs = await navigator.serviceWorker.getRegistrations();
+      await Promise.all(regs.map(r=>r.unregister()));
+    }
+    if(window.caches && caches.keys){
+      const keys = await caches.keys();
+      await Promise.all(keys.map(k=>caches.delete(k)));
+    }
+  }catch(e){}
+  const u = new URL(location.href);
+  u.searchParams.set('u', String(Date.now()));
+  location.replace(u.href);
+}
+document.getElementById('update-game-btn')?.addEventListener('click', forceUpdateGame);
 
 initBoardEvents();
 initThemeToggle();
