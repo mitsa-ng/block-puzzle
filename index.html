@@ -13,6 +13,18 @@
       document.documentElement.setAttribute('data-theme', theme);
     })();
   </script>
+  <script>
+    /* 介面縮放：提前套用已儲存的縮放值，避免載入後跳動（同 theme 的 FOUC-safe 模式）。
+       uiPx()：viewport 座標（clientX/getBoundingClientRect）→ zoom 子樹內 left/top 的 px 值。 */
+    (function () {
+      var v = NaN;
+      try { v = parseInt(localStorage.getItem('bpz_v4_uiscale'), 10); } catch (e) {}
+      var s = (v >= 70 && v <= 150) ? v / 100 : 1;
+      window.__uiScale = s;
+      window.uiPx = function (px) { return px / (window.__uiScale || 1); };
+      document.documentElement.style.setProperty('--ui-scale', String(s));
+    })();
+  </script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -26,6 +38,7 @@
   <style>
     :root {
       --cell: 44px; --gap: 3px;
+      --ui-scale: 1; /* 介面縮放（70%–150%），實際值由 head 內聯 script 從 localStorage 提前套用 */
 
       /* ── B.1 Base neutrals, text, borders (light) ── */
       --bg: #F6F5FB;
@@ -150,16 +163,19 @@
       overscroll-behavior: none;
       transition: background-color 200ms ease, color 200ms ease;
     }
+    /* 介面縮放：zoom 套在 body（含 body 直屬 overlay／toast），safe-area 相關長度一律除以
+       var(--ui-scale) 補償——zoom 會把子樹內長度乘回去，確保縮小時內容仍不被瀏海／home bar 遮擋 */
+    body { zoom: var(--ui-scale); }
     #game-root {
       position: relative;
-      min-height: 100vh; display: flex; flex-direction: column;
+      min-height: calc(100vh / var(--ui-scale)); display: flex; flex-direction: column;
       align-items: center;
-      padding: max(24px, calc(env(safe-area-inset-top) + 12px)) max(12px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+      padding: calc(max(24px, env(safe-area-inset-top) + 12px) / var(--ui-scale)) calc(max(12px, env(safe-area-inset-right)) / var(--ui-scale)) calc(max(48px, env(safe-area-inset-bottom)) / var(--ui-scale)) calc(max(12px, env(safe-area-inset-left)) / var(--ui-scale));
     }
 
     /* ── Theme toggle ── */
     #theme-toggle-btn {
-      position: absolute; top: max(24px, calc(env(safe-area-inset-top) + 12px)); right: max(12px, env(safe-area-inset-right));
+      position: absolute; top: calc(max(24px, env(safe-area-inset-top) + 12px) / var(--ui-scale)); right: calc(max(12px, env(safe-area-inset-right)) / var(--ui-scale));
       width: 44px; height: 44px;
       display: flex; align-items: center; justify-content: center;
       border-radius: var(--radius-full);
@@ -177,7 +193,7 @@
 
     /* ── Sound toggle（A-1）：與 theme-toggle-btn 同樣式，並排於其左側，避免重疊 ── */
     #sound-toggle-btn {
-      position: absolute; top: max(24px, calc(env(safe-area-inset-top) + 12px)); right: calc(max(12px, env(safe-area-inset-right)) + 54px);
+      position: absolute; top: calc(max(24px, env(safe-area-inset-top) + 12px) / var(--ui-scale)); right: calc(max(12px, env(safe-area-inset-right)) / var(--ui-scale) + 54px);
       width: 44px; height: 44px;
       display: flex; align-items: center; justify-content: center;
       border-radius: var(--radius-full);
@@ -195,7 +211,7 @@
 
     /* ── Update-game button（左上角）：清 SW＋Cache 後強制更新到最新版，樣式沿用 theme/sound 按鈕 ── */
     #update-game-btn {
-      position: absolute; top: max(24px, calc(env(safe-area-inset-top) + 12px)); left: max(12px, env(safe-area-inset-left));
+      position: absolute; top: calc(max(24px, env(safe-area-inset-top) + 12px) / var(--ui-scale)); left: calc(max(12px, env(safe-area-inset-left)) / var(--ui-scale));
       min-height: 44px; padding: 0 14px;
       display: flex; align-items: center; justify-content: center;
       border-radius: var(--radius-full);
@@ -766,7 +782,7 @@
     button:focus-visible, .mp-field:focus-visible { outline:3px solid color-mix(in srgb,var(--accent) 55%,transparent); outline-offset:2px; }
     #mp-result-overlay {
       position:fixed; inset:0; z-index:2100; display:none; overflow:auto;
-      background:color-mix(in srgb,var(--bg) 94%,transparent); padding:max(24px,env(safe-area-inset-top)) 12px max(24px,env(safe-area-inset-bottom));
+      background:color-mix(in srgb,var(--bg) 94%,transparent); padding:calc(max(24px,env(safe-area-inset-top)) / var(--ui-scale)) 12px calc(max(24px,env(safe-area-inset-bottom)) / var(--ui-scale));
     }
     #mp-result-overlay.show { display:block; }
     #mp-result-overlay .replay-ctrl-btn, #mp-result-overlay .replay-speed-btn { min-height:44px; }
@@ -840,7 +856,7 @@
     .mp-history-actions { display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end; }
     .mp-history-status { min-height:18px; margin-top:9px; color:var(--danger); font-size:11px; }
     #mp-achievement-toast {
-      position:fixed; left:50%; bottom:max(24px,env(safe-area-inset-bottom)); z-index:2300;
+      position:fixed; left:50%; bottom:calc(max(24px,env(safe-area-inset-bottom)) / var(--ui-scale)); z-index:2300;
       display:flex; align-items:center; gap:9px; max-width:calc(100vw - 24px); padding:10px 14px;
       border:1px solid color-mix(in srgb,var(--accent-2) 48%,var(--border)); border-radius:var(--radius-full);
       background:var(--surface); box-shadow:var(--shadow-lg); color:var(--text); font-size:12px; font-weight:700;
@@ -1860,7 +1876,7 @@ function showScorePop(pts, x, y, isBonus){
   const el=document.createElement('div');
   el.className='score-pop '+(isBonus?'bonus':'normal');
   el.textContent='+'+pts;
-  el.style.left=x+'px'; el.style.top=y+'px';
+  el.style.left=uiPx(x)+'px'; el.style.top=uiPx(y)+'px';
   document.body.appendChild(el);
   el.addEventListener('animationend',()=>el.remove());
 }
@@ -1870,7 +1886,7 @@ function showStreakPop(n, x, y){
   const el=document.createElement('div');
   el.className='score-pop bonus';
   el.textContent='🔥+'+n;
-  el.style.left=x+'px'; el.style.top=y+'px';
+  el.style.left=uiPx(x)+'px'; el.style.top=uiPx(y)+'px';
   document.body.appendChild(el);
   el.addEventListener('animationend',()=>el.remove());
 }
@@ -1894,8 +1910,8 @@ function spawnClearParticles(wrap, wrapRect, cellEl, color, budget){
     frag.className='clear-particle';
     frag.style.width=size+'px';
     frag.style.height=size+'px';
-    frag.style.left=originX+'px';
-    frag.style.top=originY+'px';
+    frag.style.left=uiPx(originX)+'px';
+    frag.style.top=uiPx(originY)+'px';
     frag.style.background=color;
     frag.style.setProperty('--dx',dx+'px');
     frag.style.setProperty('--dy',dy+'px');
@@ -1926,7 +1942,7 @@ function showComboPop(total){
   const el=document.createElement('div');
   el.className='combo-pop';
   el.textContent=text;
-  el.style.left=x+'px'; el.style.top=y+'px';
+  el.style.left=uiPx(x)+'px'; el.style.top=uiPx(y)+'px';
   document.body.appendChild(el);
   el.addEventListener('animationend',()=>el.remove());
   const wrap=document.querySelector('.board-wrap');
@@ -1975,8 +1991,8 @@ function bounceGhostBack(idx){
   const r=slot.getBoundingClientRect();
   const tx=r.left+r.width/2, ty=r.top+r.height/2;
   g.style.transition='left 0.28s ease, top 0.28s ease, opacity 0.28s ease';
-  g.style.left=tx+'px';
-  g.style.top=ty+'px';
+  g.style.left=uiPx(tx)+'px';
+  g.style.top=uiPx(ty)+'px';
   g.style.opacity='0';
   setTimeout(()=>{
     g.style.transition='';
@@ -2054,7 +2070,7 @@ function onBoardClick(e){
 document.addEventListener('mousemove', e=>{
   if(selIdx===null||isTouchDevice()) return;
   const g=document.getElementById('ghost');
-  g.style.left=e.clientX+'px'; g.style.top=e.clientY+'px';
+  g.style.left=uiPx(e.clientX)+'px'; g.style.top=uiPx(e.clientY)+'px';
 });
 
 document.addEventListener('keydown', e=>{
@@ -2147,8 +2163,8 @@ function liftedTouchPoint(cx, cy){
 function moveTouchGhost(cx, cy){
   const g = document.getElementById('ghost');
   const p = liftedTouchPoint(cx, cy);
-  g.style.left = p.x + 'px';
-  g.style.top  = p.y + 'px';
+  g.style.left = uiPx(p.x) + 'px';
+  g.style.top  = uiPx(p.y) + 'px';
   g.style.display = 'block';
 }
 
@@ -2181,8 +2197,8 @@ function onPieceTouchStart(e, i){
   updateGhost(pieces[i]);
   const g0 = document.getElementById('ghost');
   g0.style.transition = 'none';
-  g0.style.left = t.clientX + 'px';
-  g0.style.top  = t.clientY + 'px';
+  g0.style.left = uiPx(t.clientX) + 'px';
+  g0.style.top  = uiPx(t.clientY) + 'px';
   g0.style.opacity = '0'; // 先透明
   void g0.offsetWidth; // reflow：確保上面「無 transition」的起手位先套用
   g0.style.transition = 'left 0.15s ease, top 0.15s ease';
@@ -3236,7 +3252,7 @@ document.getElementById('update-game-btn')?.addEventListener('click', forceUpdat
 (function(){
   var STY = document.createElement('style');
   STY.textContent = [
-    '#all-ach-btn{position:absolute;top:max(24px,calc(env(safe-area-inset-top) + 12px));right:calc(max(12px,env(safe-area-inset-right)) + 108px);width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);color:var(--text);font-size:20px;cursor:pointer;z-index:10;transition:transform 150ms ease,border-color 200ms ease}',
+    '#all-ach-btn{position:absolute;top:calc(max(24px,env(safe-area-inset-top) + 12px)/var(--ui-scale,1));right:calc(max(12px,env(safe-area-inset-right))/var(--ui-scale,1) + 108px);width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);color:var(--text);font-size:20px;cursor:pointer;z-index:10;transition:transform 150ms ease,border-color 200ms ease}',
     '#all-ach-btn:active{transform:scale(.92)}',
     '#all-ach-overlay{position:fixed;inset:0;z-index:2400;display:grid;place-items:center;padding:20px 12px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px)}',
     '#all-ach-overlay[hidden]{display:none}',
@@ -3255,7 +3271,7 @@ document.getElementById('update-game-btn')?.addEventListener('click', forceUpdat
     '.aa-desc{display:block;margin-top:2px;color:var(--text-muted);font-size:10px;line-height:1.4}',
     '@media (max-width:560px){.aa-grid{grid-template-columns:1fr}}',
     /* 手機端：略縮小標題與右上三顆按鈕，讓 🏆 成就鈕不與置中標題重疊 */
-    '@media (max-width:560px){#game-root .title{font-size:16px}#theme-toggle-btn{width:38px;height:38px;right:max(10px,env(safe-area-inset-right))}#sound-toggle-btn{width:38px;height:38px;right:calc(max(10px,env(safe-area-inset-right)) + 44px)}#all-ach-btn{width:38px;height:38px;right:calc(max(10px,env(safe-area-inset-right)) + 88px);font-size:17px}}'
+    '@media (max-width:560px){#game-root .title{font-size:16px}#theme-toggle-btn{width:38px;height:38px;right:calc(max(10px,env(safe-area-inset-right))/var(--ui-scale,1))}#sound-toggle-btn{width:38px;height:38px;right:calc(max(10px,env(safe-area-inset-right))/var(--ui-scale,1) + 44px)}#all-ach-btn{width:38px;height:38px;right:calc(max(10px,env(safe-area-inset-right))/var(--ui-scale,1) + 88px);font-size:17px}}'
   ].join('');
   document.head.appendChild(STY);
 
@@ -3298,6 +3314,98 @@ document.getElementById('update-game-btn')?.addEventListener('click', forceUpdat
   btn.addEventListener('click', openOv);
   ov.addEventListener('click', function(e){ if (e.target === ov) closeOv(); });
   ov.querySelector('.aa-close').addEventListener('click', closeOv);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !ov.hidden) closeOv(); });
+})();
+
+/* ── 介面縮放（UI scale）──
+   注入右上第二排的 🔍 按鈕與設定面板；縮放值存 localStorage（bpz_v4_uiscale，70–150 整數百分比），
+   head 內聯 script 已於載入時提前套用。縮放本體是 body { zoom: var(--ui-scale) }（見樣式表）。 */
+(function(){
+  var SK_UISCALE = 'bpz_v4_uiscale';
+  var MIN = 70, MAX = 150, STEP = 5;
+
+  var STY = document.createElement('style');
+  STY.textContent = [
+    '#ui-scale-btn{position:absolute;top:calc(max(24px,env(safe-area-inset-top) + 12px)/var(--ui-scale,1) + 54px);right:calc(max(12px,env(safe-area-inset-right))/var(--ui-scale,1));width:44px;height:44px;display:flex;align-items:center;justify-content:center;border-radius:var(--radius-full);background:var(--surface);border:1px solid var(--border);box-shadow:var(--shadow-sm);color:var(--text);font-size:19px;cursor:pointer;z-index:10;transition:transform 150ms ease,border-color 200ms ease}',
+    '#ui-scale-btn:active{transform:scale(.92)}',
+    /* 面板本身抵銷 zoom（累積 zoom = scale × 1/scale = 1）：使用者調到 70% 時，
+       用來調回去的控制項不會跟著縮小到難以點擊；不支援 calc zoom 的舊瀏覽器會忽略而照常縮放，無害。 */
+    '#ui-scale-overlay{position:fixed;inset:0;z-index:2400;zoom:calc(1/var(--ui-scale,1));display:grid;place-items:center;padding:20px 12px;background:color-mix(in srgb,var(--bg) 88%,transparent);backdrop-filter:blur(8px)}',
+    '#ui-scale-overlay[hidden]{display:none}',
+    '.us-panel{width:min(340px,100%);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow-lg);overflow:hidden}',
+    '.us-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 18px;border-bottom:1px solid var(--border)}',
+    '.us-head h2{margin:0;font-family:\'Baloo 2\',\'Noto Sans TC\',sans-serif;font-size:20px;color:var(--text)}',
+    '.us-close{width:36px;height:36px;flex:0 0 auto;border-radius:var(--radius-full);background:transparent;border:1px solid var(--border);color:var(--text);font-size:18px;line-height:1;cursor:pointer}',
+    '.us-body{padding:18px;display:flex;flex-direction:column;gap:14px;align-items:stretch}',
+    '.us-value{text-align:center;font-family:\'Baloo 2\',\'Noto Sans TC\',sans-serif;font-size:34px;font-weight:800;color:var(--text);font-variant-numeric:tabular-nums}',
+    '#us-slider{width:100%;accent-color:var(--accent);cursor:pointer}',
+    '.us-row{display:flex;gap:9px}',
+    '.us-row button{min-height:44px;border-radius:var(--radius-full);background:var(--surface-2);border:1px solid var(--border);color:var(--text);font-size:16px;font-weight:800;cursor:pointer;transition:transform 150ms ease}',
+    '.us-row button:active{transform:scale(.95)}',
+    '#us-dec,#us-inc{flex:0 0 52px}',
+    '#us-reset{flex:1 1 auto;font-size:14px}',
+    '.us-note{text-align:center;color:var(--text-muted);font-size:11px}',
+    /* 手機：🔍 佔右上第二排，會落在置中的單人/多人切換面板右上角上，
+       故把切換面板往下推讓位；44px 含 70% 縮放時 safe-area 補償項變大的 worst case。 */
+    '@media (max-width:560px){#ui-scale-btn{width:38px;height:38px;top:calc(max(24px,env(safe-area-inset-top) + 12px)/var(--ui-scale,1) + 48px);right:calc(max(10px,env(safe-area-inset-right))/var(--ui-scale,1));font-size:17px}#game-root .play-area-switch{margin-top:44px}}'
+  ].join('');
+  document.head.appendChild(STY);
+
+  var btn = document.createElement('button');
+  btn.id = 'ui-scale-btn'; btn.type = 'button';
+  btn.setAttribute('aria-label','調整介面縮放'); btn.title = '介面縮放';
+  btn.textContent = '🔍';
+  (document.getElementById('game-root') || document.body).appendChild(btn);
+
+  var ov = document.createElement('div');
+  ov.id = 'ui-scale-overlay'; ov.hidden = true;
+  ov.setAttribute('role','dialog'); ov.setAttribute('aria-modal','true'); ov.setAttribute('aria-label','介面縮放設定');
+  ov.innerHTML =
+    '<div class="us-panel">'+
+      '<div class="us-head"><h2>介面縮放</h2><button class="us-close" type="button" aria-label="關閉">×</button></div>'+
+      '<div class="us-body">'+
+        '<div class="us-value" id="us-value">100%</div>'+
+        '<input type="range" id="us-slider" min="'+MIN+'" max="'+MAX+'" step="'+STEP+'" value="100" aria-label="介面縮放比例（百分比）">'+
+        '<div class="us-row">'+
+          '<button id="us-dec" type="button" aria-label="縮小介面">−</button>'+
+          '<button id="us-reset" type="button">重設 100%</button>'+
+          '<button id="us-inc" type="button" aria-label="放大介面">＋</button>'+
+        '</div>'+
+        '<div class="us-note">立即套用並自動儲存（'+MIN+'%–'+MAX+'%）</div>'+
+      '</div>'+
+    '</div>';
+  document.body.appendChild(ov);
+
+  var valueEl = document.getElementById('us-value');
+  var sliderEl = document.getElementById('us-slider');
+
+  function clampPct(v){ if(!isFinite(v)) return 100; v = Math.round(v/STEP)*STEP; return Math.min(MAX, Math.max(MIN, v)); }
+  function loadPct(){ var v = NaN; try { v = parseInt(localStorage.getItem(SK_UISCALE),10); } catch(e){} return isFinite(v) ? clampPct(v) : 100; }
+  function savePct(p){ try { localStorage.setItem(SK_UISCALE, String(p)); } catch(e){} }
+  function applyPct(p){
+    var s = p/100;
+    window.__uiScale = s;
+    document.documentElement.style.setProperty('--ui-scale', String(s));
+  }
+  var pct = loadPct();
+  function setPct(p, fromSlider){
+    pct = clampPct(p);
+    applyPct(pct); savePct(pct);
+    valueEl.textContent = pct + '%';
+    if(!fromSlider) sliderEl.value = String(pct);
+  }
+  setPct(pct); // 同步面板顯示（head script 已套用過縮放，此處冪等）
+
+  sliderEl.addEventListener('input', function(){ setPct(parseInt(sliderEl.value,10), true); });
+  document.getElementById('us-dec').addEventListener('click', function(){ setPct(pct - STEP); });
+  document.getElementById('us-inc').addEventListener('click', function(){ setPct(pct + STEP); });
+  document.getElementById('us-reset').addEventListener('click', function(){ setPct(100); });
+
+  function openOv(){ ov.hidden = false; }
+  function closeOv(){ ov.hidden = true; }
+  btn.addEventListener('click', openOv);
+  ov.addEventListener('click', function(e){ if (e.target === ov) closeOv(); });
+  ov.querySelector('.us-close').addEventListener('click', closeOv);
   document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !ov.hidden) closeOv(); });
 })();
 
