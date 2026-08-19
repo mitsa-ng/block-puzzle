@@ -1,4 +1,4 @@
-const CACHE_NAME = 'block-puzzle-v23-ui-scale';
+const CACHE_NAME = 'block-puzzle-v24-offline-fix';
 // 字型快取（C-4）：獨立 cache，跟主快取分開版號管理，activate 清理時要放過它
 // （見下方 activate 的 filter 條件），避免每次升版都把已離線快取的字型檔案清掉重抓。
 const FONTS_CACHE = 'block-puzzle-fonts-v1';
@@ -83,6 +83,6 @@ self.addEventListener('fetch', event => {
     return;
   }
   event.respondWith(
-    caches.match(req).then(cached => cached || fetch(req))
+    caches.match(req).then(cached => cached || fetch(req).catch(() => new Response('', { status: 408, statusText: 'Offline' })))
   );
 });
